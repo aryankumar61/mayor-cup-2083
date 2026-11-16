@@ -35,6 +35,12 @@ data class UserSession(
     )
 }
 
+data class PrivateDocument(
+    val title: String,
+    val mime: String,
+    val base64Data: String
+)
+
 sealed class ApiOutcome<out T> {
     data class Success<T>(val data: T) : ApiOutcome<T>()
     data class ServerError(val message: String, val isAuthExpired: Boolean = false) : ApiOutcome<Nothing>()
@@ -67,8 +73,8 @@ class CricketRepository(
     private val httpClient = OkHttpClient.Builder()
         .followRedirects(true)
         .followSslRedirects(true)
-        .connectTimeout(20, TimeUnit.SECONDS)
-        .readTimeout(25, TimeUnit.SECONDS)
+        .connectTimeout(25, TimeUnit.SECONDS)
+        .readTimeout(35, TimeUnit.SECONDS)
         .build()
 
     fun loadSavedSession(): UserSession? {
@@ -163,7 +169,7 @@ class CricketRepository(
     // ---------- Auth ----------
 
     suspend fun login(username: String, password: String): ApiOutcome<UserSession> {
-        val cleanUser = username.trim()
+        val cleanUser = username.trim().lowercase()
         val cleanPass = password.trim()
         return when (val remote = postApi("login") {
             put("user", cleanUser)
@@ -173,11 +179,12 @@ class CricketRepository(
                 val json = remote.data
                 val token = json.optString("token", "")
                 val sess = json.optJSONObject("session")
+                val userFromSess = sess?.optString("user", cleanUser)?.ifBlank { cleanUser } ?: cleanUser
                 val role = sess?.optString("role", "captain") ?: "captain"
-                val name = sess?.optString("name", cleanUser) ?: cleanUser
+                val name = sess?.optString("name", userFromSess) ?: userFromSess
                 val ward = sess?.optIntSafe("ward", 0) ?: 0
                 val userSession = UserSession(
-                    username = cleanUser,
+                    username = userFromSess,
                     displayName = name,
                     role = role,
                     ward = ward,
@@ -188,7 +195,6 @@ class CricketRepository(
             }
             is ApiOutcome.ServerError -> remote
             is ApiOutcome.NetworkUnavailable -> {
-                // Local Room fallback when offline
                 val local = withContext(Dispatchers.IO) {
                     database.accountDao().getAccount(cleanUser)
                 }
@@ -203,7 +209,7 @@ class CricketRepository(
                     saveSession(localSession)
                     ApiOutcome.Success(localSession)
                 } else {
-                    ApiOutcome.ServerError("Invalid username or password")
+                    ApiOutcome.ServerError("Wrong username or password")
                 }
             }
         }
@@ -243,7 +249,11 @@ class CricketRepository(
 
     // ---------- Players ----------
 
-    suspend fun savePlayerRemoteAndLocal(token: String?, player: Player): ApiOutcome<String> {
+    suspend fun savePlayerRemoteAndLocal(
+        token: String?,
+        player: Player,
+        citizenDataUrl: String? = null
+    ): ApiOutcome<Player> {
         val playerJson = JSONObject().apply {
             put("id", player.id)
             put("ward", player.ward)
@@ -259,24 +269,40 @@ class CricketRepository(
             put("bowl", player.bowl)
             put("cap", player.cap)
             put("photo", player.photo)
+            put("citizen", player.citizen)
+            if (!citizenDataUrl.isNullOrBlank()) {
+                put("citizenData", citizenDataUrl)
+            }
         }
 
         return when (val remote = postApi("savePlayer", token) {
             put("player", playerJson)
         }) {
             is ApiOutcome.Success -> {
+                val returnedId = remote.data.optString("id", player.id).ifBlank { player.id }
+                val returnedPhoto = remote.data.optString("photo", player.photo)
                 val returnedStatus = remote.data.optString("status", player.status).ifBlank { player.status }
+                val updated = player.copy(
+                    id = returnedId,
+                    photo = returnedPhoto,
+                    status = returnedStatus
+                )
                 withContext(Dispatchers.IO) {
-                    database.playerDao().insertOrUpdate(player.copy(status = returnedStatus))
+                    database.playerDao().insertOrUpdate(updated)
                 }
-                ApiOutcome.Success(returnedStatus)
+                ApiOutcome.Success(updated)
             }
             is ApiOutcome.ServerError -> remote
             is ApiOutcome.NetworkUnavailable -> {
-                withContext(Dispatchers.IO) {
-                    database.playerDao().insertOrUpdate(player)
+                val localPlayer = if (!citizenDataUrl.isNullOrBlank()) {
+                    player.copy(citizenimg = "local_attached")
+                } else {
+                    player
                 }
-                ApiOutcome.Success(player.status)
+                withContext(Dispatchers.IO) {
+                    database.playerDao().insertOrUpdate(localPlayer)
+                }
+                ApiOutcome.Success(localPlayer)
             }
         }
     }
@@ -319,6 +345,63 @@ class CricketRepository(
                 }
                 ApiOutcome.Success(Unit)
             }
+        }
+    }
+
+    // ---------- Documents (Ward Sifaris & Citizenship Photo) ----------
+
+    suspend fun saveSifaris(token: String?, ward: Int, paperDataUrl: String): ApiOutcome<Unit> {
+        return when (val remote = postApi("saveSifaris", token) {
+            put("ward", ward)
+            put("paperData", paperDataUrl)
+        }) {
+            is ApiOutcome.Success -> {
+                withContext(Dispatchers.IO) {
+                    val existing = database.configDao().getConfigValue("papers").orEmpty()
+                    val set = existing.split(",").mapNotNull { it.trim().toIntOrNull() }.toMutableSet()
+                    set.add(ward)
+                    database.configDao().setConfig(
+                        TournamentConfig("papers", set.sorted().joinToString(","))
+                    )
+                }
+                ApiOutcome.Success(Unit)
+            }
+            is ApiOutcome.ServerError -> remote
+            is ApiOutcome.NetworkUnavailable -> {
+                withContext(Dispatchers.IO) {
+                    val existing = database.configDao().getConfigValue("papers").orEmpty()
+                    val set = existing.split(",").mapNotNull { it.trim().toIntOrNull() }.toMutableSet()
+                    set.add(ward)
+                    database.configDao().setConfig(
+                        TournamentConfig("papers", set.sorted().joinToString(","))
+                    )
+                }
+                ApiOutcome.Success(Unit)
+            }
+        }
+    }
+
+    suspend fun getPrivateDoc(
+        token: String?,
+        kind: String, // "sifaris" or "citizen"
+        id: String,
+        title: String
+    ): ApiOutcome<PrivateDocument> {
+        return when (val remote = postApi("getDoc", token) {
+            put("kind", kind)
+            put("id", id)
+        }) {
+            is ApiOutcome.Success -> {
+                val mime = remote.data.optString("mime", "image/jpeg")
+                val data = remote.data.optString("data", "")
+                if (data.isBlank()) {
+                    ApiOutcome.ServerError("Document is empty")
+                } else {
+                    ApiOutcome.Success(PrivateDocument(title = title, mime = mime, base64Data = data))
+                }
+            }
+            is ApiOutcome.ServerError -> remote
+            is ApiOutcome.NetworkUnavailable -> ApiOutcome.ServerError("Connect to internet to view Drive document")
         }
     }
 
@@ -520,7 +603,12 @@ class CricketRepository(
                                     bowl = obj.optString("bowl", "None"),
                                     cap = obj.optString("cap", ""),
                                     photo = obj.optString("photo", ""),
-                                    status = obj.optString("status", "approved")
+                                    status = obj.optString("status", "approved"),
+                                    citizen = obj.optString("citizen", ""),
+                                    citizenimg = obj.optString("citizenimg", ""),
+                                    citizenmime = obj.optString("citizenmime", ""),
+                                    by = obj.optString("by", ""),
+                                    updated = obj.optString("updated", "")
                                 )
                             )
                         }
@@ -553,19 +641,30 @@ class CricketRepository(
                         database.matchDao().replaceAll(downloadedMatches)
                     }
 
+                    val cfgList = mutableListOf<TournamentConfig>()
                     if (json.has("cfg")) {
                         val cfgObj = json.optJSONObject("cfg")
                         if (cfgObj != null) {
-                            val cfgList = mutableListOf<TournamentConfig>()
                             val keys = cfgObj.keys()
                             while (keys.hasNext()) {
                                 val k = keys.next()
                                 cfgList.add(TournamentConfig(k, cfgObj.optString(k, "")))
                             }
-                            if (cfgList.isNotEmpty()) {
-                                database.configDao().setAll(cfgList)
+                        }
+                    }
+                    if (json.has("papers")) {
+                        val pArr = json.optJSONArray("papers")
+                        val wards = mutableListOf<Int>()
+                        if (pArr != null) {
+                            for (i in 0 until pArr.length()) {
+                                val w = pArr.opt(i).toString().toDoubleOrNull()?.toInt()
+                                if (w != null && w in 1..9) wards.add(w)
                             }
                         }
+                        cfgList.add(TournamentConfig("papers", wards.distinct().sorted().joinToString(",")))
+                    }
+                    if (cfgList.isNotEmpty()) {
+                        database.configDao().setAll(cfgList)
                     }
                 }
                 ApiOutcome.Success("Synced with Google Sheets")
@@ -682,7 +781,7 @@ class CricketRepository(
     fun generatePlayersCsv(players: List<Player>): String {
         val headers = listOf(
             "ward", "jersey", "name", "father", "dob",
-            "mobile", "blood", "address", "role", "bat", "bowl", "cap", "status"
+            "mobile", "blood", "address", "role", "bat", "bowl", "cap", "citizen", "status"
         )
         val sb = StringBuilder("\uFEFF")
         sb.append(headers.joinToString(",")).append("\n")
@@ -701,6 +800,7 @@ class CricketRepository(
                     p.bat,
                     p.bowl,
                     p.cap,
+                    p.citizen,
                     p.status
                 )
                 sb.append(row.joinToString(",") { "\"${it.replace("\"", "\"\"")}\"" }).append("\n")

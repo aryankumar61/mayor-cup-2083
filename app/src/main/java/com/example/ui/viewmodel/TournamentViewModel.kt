@@ -10,10 +10,10 @@ import com.example.data.model.TournamentAccount
 import com.example.data.model.TournamentMatch
 import com.example.data.repository.ApiOutcome
 import com.example.data.repository.CricketRepository
+import com.example.data.repository.PrivateDocument
 import com.example.data.repository.UserSession
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.util.UUID
 
 enum class TournamentTab {
     PLAYERS, MATCHES, STANDINGS, ACCOUNTS
@@ -38,6 +38,10 @@ data class UiState(
     val isAccountModalOpen: Boolean = false,
     val accountBeingEdited: TournamentAccount? = null,
     val isChangePasswordOpen: Boolean = false,
+    val isSifarisDialogOpen: Boolean = false,
+    val isUploadingSifaris: Boolean = false,
+    val viewingDocument: PrivateDocument? = null,
+    val isLoadingDoc: Boolean = false,
     val showIncompleteLeagueConfirm: Boolean = false,
     val snackbarMessage: String? = null,
     val isSyncing: Boolean = false
@@ -59,6 +63,16 @@ class TournamentViewModel(application: Application) : AndroidViewModel(applicati
     val configs: StateFlow<Map<String, String>> = repository.configsFlow
         .map { list -> list.associate { it.key to it.value } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    val uploadedPaperWards: StateFlow<Set<Int>> = configs
+        .map { cfg ->
+            cfg["papers"].orEmpty()
+                .split(",")
+                .mapNotNull { it.trim().toIntOrNull() }
+                .filter { it in 1..9 }
+                .toSet()
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
@@ -122,6 +136,7 @@ class TournamentViewModel(application: Application) : AndroidViewModel(applicati
                     p.father.lowercase().contains(q) ||
                     p.mobile.contains(q) ||
                     p.jersey.contains(q) ||
+                    p.citizen.lowercase().contains(q) ||
                     p.address.lowercase().contains(q))
         }.sortedWith(compareBy({ it.ward }, { it.jersey.toIntOrNull() ?: 999 }))
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -133,6 +148,8 @@ class TournamentViewModel(application: Application) : AndroidViewModel(applicati
                 currentUser = null,
                 authToken = "",
                 statusFilter = "",
+                isSifarisDialogOpen = false,
+                viewingDocument = null,
                 currentTab = if (it.currentTab == TournamentTab.ACCOUNTS) TournamentTab.PLAYERS else it.currentTab
             )
         }
@@ -228,6 +245,8 @@ class TournamentViewModel(application: Application) : AndroidViewModel(applicati
                     currentUser = null,
                     authToken = "",
                     statusFilter = "",
+                    isSifarisDialogOpen = false,
+                    viewingDocument = null,
                     currentTab = if (it.currentTab == TournamentTab.ACCOUNTS) TournamentTab.PLAYERS else it.currentTab
                 )
             }
@@ -261,6 +280,42 @@ class TournamentViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
+    // ---------- Ward Sifaris & Private Documents ----------
+
+    fun openSifarisDialog() = _uiState.update { it.copy(isSifarisDialogOpen = true) }
+    fun closeSifarisDialog() = _uiState.update { it.copy(isSifarisDialogOpen = false) }
+
+    fun uploadSifaris(ward: Int, paperDataUrl: String) {
+        if (paperDataUrl.isBlank()) {
+            showSnackbar("Choose a Sifaris file first")
+            return
+        }
+        viewModelScope.launch {
+            _uiState.update { it.copy(isUploadingSifaris = true) }
+            val outcome = repository.saveSifaris(_uiState.value.authToken, ward, paperDataUrl)
+            _uiState.update { it.copy(isUploadingSifaris = false) }
+            handleOutcome(outcome) {
+                showSnackbar("Ward $ward Sifaris uploaded")
+                viewModelScope.launch { syncWithServer(silentOnOffline = true) }
+            }
+        }
+    }
+
+    fun viewPrivateDoc(kind: String, id: String, title: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingDoc = true) }
+            val outcome = repository.getPrivateDoc(_uiState.value.authToken, kind, id, title)
+            _uiState.update { it.copy(isLoadingDoc = false) }
+            handleOutcome(outcome) { doc ->
+                _uiState.update { it.copy(viewingDocument = doc) }
+            }
+        }
+    }
+
+    fun closePrivateDoc() {
+        _uiState.update { it.copy(viewingDocument = null) }
+    }
+
     // ---------- Players ----------
 
     fun openPlayerProfile(player: Player) {
@@ -281,7 +336,7 @@ class TournamentViewModel(application: Application) : AndroidViewModel(applicati
             1
         }
         val newPlayer = Player(
-            id = UUID.randomUUID().toString(),
+            id = "P${System.currentTimeMillis()}",
             ward = initialWard,
             name = "",
             status = if (user?.role == "captain") "pending" else "approved"
@@ -297,27 +352,46 @@ class TournamentViewModel(application: Application) : AndroidViewModel(applicati
         _uiState.update { it.copy(isAddEditPlayerOpen = false, playerBeingEdited = null) }
     }
 
-    fun savePlayer(player: Player) {
+    fun savePlayer(player: Player, citizenDataUrl: String? = null) {
         if (player.name.isBlank()) {
             showSnackbar("Player name required")
             return
         }
+        val user = _uiState.value.currentUser
+        val isCaptain = user?.role == "captain"
+        if (isCaptain) {
+            if (user.ward !in uploadedPaperWards.value) {
+                showSnackbar("Upload Ward ${user.ward} Sifaris first (one time)")
+                return
+            }
+            if (player.citizen.isBlank()) {
+                showSnackbar("Citizenship number required")
+                return
+            }
+            if (citizenDataUrl.isNullOrBlank() && player.citizenimg.isBlank()) {
+                showSnackbar("Citizenship card photo required")
+                return
+            }
+        }
+
         viewModelScope.launch {
             _uiState.update { it.copy(isSavingPlayer = true) }
-            val user = _uiState.value.currentUser
-            val defaultStatus = if (user?.role == "captain") "pending" else player.status
+            val defaultStatus = if (isCaptain) "pending" else player.status
             val prepared = player.copy(status = defaultStatus)
-            val outcome = repository.savePlayerRemoteAndLocal(_uiState.value.authToken, prepared)
+            val outcome = repository.savePlayerRemoteAndLocal(
+                token = _uiState.value.authToken,
+                player = prepared,
+                citizenDataUrl = citizenDataUrl
+            )
             _uiState.update { it.copy(isSavingPlayer = false) }
 
-            handleOutcome(outcome) { savedStatus ->
-                val finalPlayer = prepared.copy(status = savedStatus)
+            handleOutcome(outcome) { savedPlayer ->
                 closeAddEditPlayer()
-                if (_uiState.value.selectedPlayer?.id == finalPlayer.id) {
-                    _uiState.update { it.copy(selectedPlayer = finalPlayer) }
+                if (_uiState.value.selectedPlayer?.id == savedPlayer.id) {
+                    _uiState.update { it.copy(selectedPlayer = savedPlayer) }
                 }
                 showSnackbar(
-                    if (savedStatus == "pending") "Saved - waiting for admin approval"
+                    if (savedPlayer.status == "pending") "Saved - waiting for admin approval"
                     else "Saved"
                 )
                 viewModelScope.launch { syncWithServer(silentOnOffline = true) }
@@ -330,7 +404,7 @@ class TournamentViewModel(application: Application) : AndroidViewModel(applicati
             val outcome = repository.setPlayerStatusRemoteAndLocal(_uiState.value.authToken, id, status)
             handleOutcome(outcome) {
                 closePlayerProfile()
-                showSnackbar(if (status == "approved") "Approved ✓" else "Rejected")
+                showSnackbar(if (status == "approved") "Approved" else "Rejected")
                 viewModelScope.launch { syncWithServer(silentOnOffline = true) }
             }
         }
@@ -509,7 +583,7 @@ class TournamentViewModel(application: Application) : AndroidViewModel(applicati
             )
             val outcome = repository.saveConfigsRemoteAndLocal(_uiState.value.authToken, map)
             handleOutcome(outcome) {
-                showSnackbar("Saved ✓")
+                showSnackbar("Saved")
                 viewModelScope.launch { syncWithServer(silentOnOffline = true) }
             }
         }

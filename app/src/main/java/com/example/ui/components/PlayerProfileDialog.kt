@@ -8,6 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -22,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -31,6 +33,7 @@ import com.example.ui.theme.CricketGold
 import com.example.ui.theme.CricketGreen
 import com.example.ui.theme.CricketPrimary
 import com.example.ui.theme.CricketRed
+import com.example.ui.theme.OutfitFontFamily
 import java.time.LocalDate
 import java.time.Period
 
@@ -42,13 +45,14 @@ fun PlayerProfileDialog(
     onEdit: (Player) -> Unit,
     onApprove: (String) -> Unit,
     onReject: (String) -> Unit,
-    onDelete: (String) -> Unit
+    onDelete: (String) -> Unit,
+    onViewCitizenshipDoc: (Player) -> Unit = {}
 ) {
     if (player == null) return
     val context = LocalContext.current
     val isAdmin = currentUser?.role == "admin"
-    val isCaptain = currentUser?.role == "captain" && currentUser.ward == player.ward
-    val canEdit = isAdmin || isCaptain
+    val isOwnCaptain = currentUser?.role == "captain" && currentUser.ward == player.ward
+    val canEdit = isAdmin || isOwnCaptain
 
     var showDeleteConfirm by remember(player.id) { mutableStateOf(false) }
 
@@ -65,7 +69,7 @@ fun PlayerProfileDialog(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Delete Player?") },
+            title = { Text("Delete Player?", fontFamily = OutfitFontFamily, fontWeight = FontWeight.Bold) },
             text = { Text("Delete ${player.name} permanently?") },
             confirmButton = {
                 Button(
@@ -88,12 +92,12 @@ fun PlayerProfileDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
-                .padding(vertical = 16.dp)
+                .padding(vertical = 12.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -104,8 +108,8 @@ fun PlayerProfileDialog(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(130.dp)
-                        .clip(RoundedCornerShape(14.dp))
+                        .size(128.dp)
+                        .clip(RoundedCornerShape(16.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant),
                     contentAlignment = Alignment.Center
                 ) {
@@ -117,18 +121,20 @@ fun PlayerProfileDialog(
                     )
                 }
 
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(12.dp))
 
                 Text(
                     text = player.name,
+                    fontFamily = OutfitFontFamily,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
+                    fontSize = 21.sp,
+                    textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Text(
                     text = "Rajdevi Mayor Cup 2083 · Ward ${player.ward} Team",
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
@@ -139,9 +145,15 @@ fun PlayerProfileDialog(
                 ) {
                     SuggestionChip(
                         onClick = {},
-                        label = { Text("Ward ${player.ward}", fontWeight = FontWeight.Bold) },
+                        label = {
+                            Text(
+                                "Ward ${player.ward}",
+                                fontFamily = OutfitFontFamily,
+                                fontWeight = FontWeight.Bold
+                            )
+                        },
                         colors = SuggestionChipDefaults.suggestionChipColors(
-                            containerColor = CricketPrimary.copy(alpha = 0.15f),
+                            containerColor = CricketPrimary.copy(alpha = 0.14f),
                             labelColor = CricketPrimary
                         )
                     )
@@ -149,7 +161,13 @@ fun PlayerProfileDialog(
                     if (player.jersey.isNotBlank()) {
                         SuggestionChip(
                             onClick = {},
-                            label = { Text("#${player.jersey}", fontWeight = FontWeight.Bold) }
+                            label = {
+                                Text(
+                                    "#${player.jersey}",
+                                    fontFamily = OutfitFontFamily,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         )
                     }
 
@@ -183,16 +201,17 @@ fun PlayerProfileDialog(
                 val detailRows = listOfNotNull(
                     "Ward Team" to "Ward ${player.ward}",
                     if (player.jersey.isNotBlank()) "Jersey No" to player.jersey else null,
-                    if (player.father.isNotBlank()) "Father Name" to player.father else null,
-                    if (player.dob.isNotBlank()) "Date of Birth" to "${player.dob}$ageText" else null,
-                    if (player.mobile.isNotBlank()) "Mobile" to player.mobile else null,
-                    if (player.blood.isNotBlank()) "Blood Group" to player.blood else null,
-                    if (player.address.isNotBlank()) "Address" to player.address else null,
+                    if (canEdit && player.citizen.isNotBlank()) "Citizenship No" to player.citizen else null,
+                    if (canEdit && player.father.isNotBlank()) "Father Name" to player.father else null,
+                    if (canEdit && player.dob.isNotBlank()) "Date of Birth" to "${player.dob}$ageText" else null,
+                    if (canEdit && player.mobile.isNotBlank()) "Mobile" to player.mobile else null,
+                    if (canEdit && player.blood.isNotBlank()) "Blood Group" to player.blood else null,
+                    if (canEdit && player.address.isNotBlank()) "Address" to player.address else null,
                     if (player.role.isNotBlank()) "Role" to player.role else null,
                     if (player.bat.isNotBlank()) "Batting" to player.bat else null,
                     if (player.bowl.isNotBlank()) "Bowling" to player.bowl else null,
                     if (player.cap.isNotBlank()) "Captaincy" to player.cap else null,
-                    if (currentUser != null && player.status.isNotBlank()) "Status" to player.status else null
+                    if (currentUser != null && player.status.isNotBlank()) "Status" to player.status.replaceFirstChar { it.uppercase() } else null
                 )
 
                 Column(
@@ -209,7 +228,7 @@ fun PlayerProfileDialog(
                         ) {
                             Text(
                                 text = label,
-                                fontSize = 13.sp,
+                                style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.weight(1f)
                             )
@@ -220,9 +239,10 @@ fun PlayerProfileDialog(
                             ) {
                                 Text(
                                     text = value,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.End
                                 )
                                 if (label == "Mobile") {
                                     Spacer(Modifier.width(6.dp))
@@ -231,7 +251,7 @@ fun PlayerProfileDialog(
                                             val dialIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$value"))
                                             context.startActivity(dialIntent)
                                         },
-                                        modifier = Modifier.size(24.dp)
+                                        modifier = Modifier.size(28.dp)
                                     ) {
                                         Icon(
                                             Icons.Default.Phone,
@@ -246,7 +266,22 @@ fun PlayerProfileDialog(
                     }
                 }
 
-                Spacer(Modifier.height(18.dp))
+                if (canEdit && player.citizenimg.isNotBlank()) {
+                    Spacer(Modifier.height(12.dp))
+                    FilledTonalButton(
+                        onClick = { onViewCitizenshipDoc(player) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 44.dp)
+                            .testTag("view_citizenship_button")
+                    ) {
+                        Icon(Icons.Default.Badge, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("View Citizenship Photo")
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
 
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -261,7 +296,9 @@ fun PlayerProfileDialog(
                                 Button(
                                     onClick = { onApprove(player.id) },
                                     colors = ButtonDefaults.buttonColors(containerColor = CricketGreen),
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .heightIn(min = 44.dp)
                                 ) {
                                     Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(4.dp))
@@ -272,7 +309,9 @@ fun PlayerProfileDialog(
                                 Button(
                                     onClick = { onReject(player.id) },
                                     colors = ButtonDefaults.buttonColors(containerColor = CricketRed),
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .heightIn(min = 44.dp)
                                 ) {
                                     Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(4.dp))
@@ -288,7 +327,9 @@ fun PlayerProfileDialog(
                     ) {
                         OutlinedButton(
                             onClick = onDismiss,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 44.dp)
                         ) {
                             Text("Close")
                         }
@@ -296,11 +337,10 @@ fun PlayerProfileDialog(
                         OutlinedButton(
                             onClick = {
                                 val text = buildString {
-                                    appendLine("🏏 Rajdevi Mayor Cup 2083")
+                                    appendLine("Rajdevi Mayor Cup 2083")
                                     appendLine("Player: ${player.name} (${player.role})")
                                     appendLine("Team: Ward ${player.ward} | Jersey: #${player.jersey}")
                                     if (player.cap.isNotBlank()) appendLine("Role: ${player.cap}")
-                                    if (player.mobile.isNotBlank()) appendLine("Mobile: ${player.mobile}")
                                     appendLine("Batting: ${player.bat} | Bowling: ${player.bowl}")
                                 }
                                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
@@ -310,7 +350,9 @@ fun PlayerProfileDialog(
                                 }
                                 context.startActivity(Intent.createChooser(shareIntent, "Share Player Profile"))
                             },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 44.dp)
                         ) {
                             Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
@@ -320,8 +362,10 @@ fun PlayerProfileDialog(
                         if (canEdit) {
                             Button(
                                 onClick = { onEdit(player) },
+                                colors = ButtonDefaults.buttonColors(containerColor = CricketPrimary),
                                 modifier = Modifier
                                     .weight(1f)
+                                    .heightIn(min = 44.dp)
                                     .testTag("edit_player_button")
                             ) {
                                 Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -339,7 +383,7 @@ fun PlayerProfileDialog(
                         ) {
                             Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("Delete")
+                            Text("Delete Player")
                         }
                     }
                 }

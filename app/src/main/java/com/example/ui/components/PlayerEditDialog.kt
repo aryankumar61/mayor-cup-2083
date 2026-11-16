@@ -4,6 +4,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,6 +12,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,7 +30,9 @@ import androidx.compose.ui.window.DialogProperties
 import com.example.data.model.Player
 import com.example.data.model.TournamentAccount
 import com.example.ui.theme.CricketGold
+import com.example.ui.theme.CricketGreen
 import com.example.ui.theme.CricketPrimary
+import com.example.ui.theme.OutfitFontFamily
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -37,9 +43,11 @@ fun PlayerEditDialog(
     isOpen: Boolean,
     player: Player?,
     currentUser: TournamentAccount?,
+    hasWardSifaris: Boolean = true,
     isSaving: Boolean = false,
     onDismiss: () -> Unit,
-    onSave: (Player) -> Unit
+    onOpenSifaris: () -> Unit = {},
+    onSave: (Player, String?) -> Unit
 ) {
     if (!isOpen || player == null) return
 
@@ -59,8 +67,11 @@ fun PlayerEditDialog(
     var bat by remember(player) { mutableStateOf(player.bat.ifBlank { "Right Hand" }) }
     var bowl by remember(player) { mutableStateOf(player.bowl.ifBlank { "None" }) }
     var cap by remember(player) { mutableStateOf(player.cap) }
+    var citizen by remember(player) { mutableStateOf(player.citizen) }
     var photoData by remember(player) { mutableStateOf(player.photo) }
+    var citizenDataUrl by remember(player) { mutableStateOf<String?>(null) }
     var isEncodingPhoto by remember { mutableStateOf(false) }
+    var isEncodingCitizen by remember { mutableStateOf(false) }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -79,6 +90,23 @@ fun PlayerEditDialog(
         }
     }
 
+    val citizenPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                isEncodingCitizen = true
+                val encoded = withContext(Dispatchers.IO) {
+                    encodeImageUriToDataUrl(context, uri, maxDim = 1000, quality = 78)
+                }
+                if (encoded != null) {
+                    citizenDataUrl = encoded
+                }
+                isEncodingCitizen = false
+            }
+        }
+    }
+
     val roles = listOf("Batsman", "Bowler", "All-rounder", "Wicket Keeper")
     val batStyles = listOf("Right Hand", "Left Hand")
     val bowlStyles = listOf(
@@ -93,11 +121,13 @@ fun PlayerEditDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Card(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             modifier = Modifier
                 .fillMaxWidth(0.95f)
-                .fillMaxHeight(0.9f)
-                .padding(vertical = 12.dp)
+                .widthIn(max = 600.dp)
+                .fillMaxHeight(0.92f)
+                .padding(vertical = 8.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -105,26 +135,55 @@ fun PlayerEditDialog(
                     .padding(20.dp)
             ) {
                 Text(
-                    text = if (player.name.isNotBlank()) "Edit Player" else "Add Player",
+                    text = if (player.name.isNotBlank()) "Edit Player" else "Register Player",
+                    fontFamily = OutfitFontFamily,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
+                    fontSize = 21.sp,
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
                 if (isCaptain) {
-                    Surface(
-                        color = CricketGold.copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp)
-                    ) {
-                        Text(
-                            text = "⏳ Captain entries are saved as Pending and show publicly after admin approval.",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(8.dp)
-                        )
+                    Spacer(Modifier.height(8.dp))
+                    if (!hasWardSifaris) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.WarningAmber,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    text = "Upload Ward $ward Sifaris letter before saving players.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                TextButton(onClick = onOpenSifaris) {
+                                    Text("Upload", fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    } else {
+                        Surface(
+                            color = CricketGold.copy(alpha = 0.14f),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = "Captain submissions are saved as Pending until approved by committee admin.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(10.dp)
+                            )
+                        }
                     }
                 }
 
@@ -144,9 +203,10 @@ fun PlayerEditDialog(
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(84.dp)
-                                .clip(RoundedCornerShape(12.dp))
+                                .size(82.dp)
+                                .clip(RoundedCornerShape(14.dp))
                                 .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f), RoundedCornerShape(14.dp))
                                 .clickable {
                                     photoPickerLauncher.launch(
                                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
@@ -170,20 +230,19 @@ fun PlayerEditDialog(
                             }
                         }
 
-                        Column {
-                            Button(
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            FilledTonalButton(
                                 onClick = {
                                     photoPickerLauncher.launch(
                                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                                     )
-                                },
-                                colors = ButtonDefaults.outlinedButtonColors()
+                                }
                             ) {
-                                Text("Player Photo")
+                                Text(if (photoData.isBlank()) "Choose Player Photo" else "Change Photo")
                             }
                             Text(
-                                "Auto-resized for Google Sheet sync",
-                                fontSize = 11.sp,
+                                "Uploaded to Drive on save",
+                                style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -195,10 +254,121 @@ fun PlayerEditDialog(
                         onValueChange = { name = it },
                         label = { Text("Player Full Name *") },
                         singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("player_name_input")
                     )
+
+                    // Citizenship Verification Section
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Badge,
+                                    contentDescription = null,
+                                    tint = CricketPrimary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    text = if (isCaptain) "Citizenship Verification (Required)" else "Citizenship Verification",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+
+                            OutlinedTextField(
+                                value = citizen,
+                                onValueChange = { citizen = it },
+                                label = { Text(if (isCaptain) "Citizenship No *" else "Citizenship No") },
+                                placeholder = { Text("e.g. 12-01-75-01234") },
+                                singleLine = true,
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("player_citizen_input")
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(64.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(MaterialTheme.colorScheme.surface)
+                                        .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
+                                        .clickable {
+                                            citizenPickerLauncher.launch(
+                                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                            )
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    when {
+                                        isEncodingCitizen -> CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                        citizenDataUrl != null -> PlayerAvatarImage(
+                                            photo = citizenDataUrl.orEmpty(),
+                                            contentDescription = "Selected citizenship card"
+                                        )
+                                        player.citizenimg.isNotBlank() -> Icon(
+                                            Icons.Default.CheckCircle,
+                                            contentDescription = "Attached on server",
+                                            tint = CricketGreen
+                                        )
+                                        else -> Icon(
+                                            Icons.Default.AddPhotoAlternate,
+                                            contentDescription = "Pick citizenship photo",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    OutlinedButton(
+                                        onClick = {
+                                            citizenPickerLauncher.launch(
+                                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                            )
+                                        },
+                                        enabled = !isEncodingCitizen,
+                                        modifier = Modifier.testTag("pick_citizen_photo_button")
+                                    ) {
+                                        Text(
+                                            when {
+                                                citizenDataUrl != null -> "Selected (Tap to change)"
+                                                player.citizenimg.isNotBlank() -> "Attached (Replace Photo)"
+                                                else -> if (isCaptain) "Citizenship Photo *" else "Citizenship Photo"
+                                            }
+                                        )
+                                    }
+                                    Text(
+                                        text = if (player.citizenimg.isNotBlank() && citizenDataUrl == null) {
+                                            "Private citizenship card saved on server"
+                                        } else {
+                                            "Stored privately in Drive (Admin & Captain only)"
+                                        },
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
 
                     // Ward and Jersey Row
                     Row(
@@ -217,6 +387,7 @@ fun PlayerEditDialog(
                                 readOnly = true,
                                 enabled = !isCaptain,
                                 label = { Text("Ward Team") },
+                                shape = RoundedCornerShape(12.dp),
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = wardExpanded) },
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -244,6 +415,7 @@ fun PlayerEditDialog(
                             label = { Text("Jersey No") },
                             placeholder = { Text("e.g. 7") },
                             singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
                                 .weight(1f)
                                 .testTag("player_jersey_input")
@@ -256,6 +428,7 @@ fun PlayerEditDialog(
                         onValueChange = { father = it },
                         label = { Text("Father Name") },
                         singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -270,6 +443,7 @@ fun PlayerEditDialog(
                             label = { Text("Date of Birth") },
                             placeholder = { Text("YYYY-MM-DD") },
                             singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.weight(1f)
                         )
 
@@ -278,6 +452,7 @@ fun PlayerEditDialog(
                             onValueChange = { mobile = it },
                             label = { Text("Mobile No") },
                             singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -298,6 +473,7 @@ fun PlayerEditDialog(
                                 onValueChange = {},
                                 readOnly = true,
                                 label = { Text("Blood Group") },
+                                shape = RoundedCornerShape(12.dp),
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = bloodExpanded) },
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -330,6 +506,7 @@ fun PlayerEditDialog(
                                 onValueChange = {},
                                 readOnly = true,
                                 label = { Text("Captain / Vice") },
+                                shape = RoundedCornerShape(12.dp),
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = capExpanded) },
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -364,6 +541,7 @@ fun PlayerEditDialog(
                             onValueChange = {},
                             readOnly = true,
                             label = { Text("Playing Role") },
+                            shape = RoundedCornerShape(12.dp),
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = roleExpanded) },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -401,6 +579,7 @@ fun PlayerEditDialog(
                                 onValueChange = {},
                                 readOnly = true,
                                 label = { Text("Batting Style") },
+                                shape = RoundedCornerShape(12.dp),
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = batExpanded) },
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -433,6 +612,7 @@ fun PlayerEditDialog(
                                 onValueChange = {},
                                 readOnly = true,
                                 label = { Text("Bowling Style") },
+                                shape = RoundedCornerShape(12.dp),
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = bowlExpanded) },
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -461,6 +641,7 @@ fun PlayerEditDialog(
                         onValueChange = { address = it },
                         label = { Text("Address / Tole") },
                         singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -475,7 +656,9 @@ fun PlayerEditDialog(
                     OutlinedButton(
                         onClick = onDismiss,
                         enabled = !isSaving,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp)
                     ) {
                         Text("Cancel")
                     }
@@ -495,14 +678,16 @@ fun PlayerEditDialog(
                                 bat = bat.trim(),
                                 bowl = bowl.trim(),
                                 cap = cap.trim(),
-                                photo = photoData
+                                photo = photoData,
+                                citizen = citizen.trim()
                             )
-                            onSave(updated)
+                            onSave(updated, citizenDataUrl)
                         },
-                        enabled = !isSaving && !isEncodingPhoto,
+                        enabled = !isSaving && !isEncodingPhoto && !isEncodingCitizen,
                         colors = ButtonDefaults.buttonColors(containerColor = CricketPrimary),
                         modifier = Modifier
                             .weight(1f)
+                            .heightIn(min = 48.dp)
                             .testTag("save_player_button")
                     ) {
                         Text(if (isSaving) "Saving…" else "Save Player")

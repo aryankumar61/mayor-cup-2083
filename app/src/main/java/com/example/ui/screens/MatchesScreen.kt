@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -30,6 +31,7 @@ import com.example.ui.theme.CricketGold
 import com.example.ui.theme.CricketGreen
 import com.example.ui.theme.CricketPrimary
 import com.example.ui.theme.CricketRed
+import com.example.ui.theme.OutfitFontFamily
 import java.util.Locale
 
 @Composable
@@ -48,91 +50,110 @@ fun MatchesScreen(
         if (selectedStage == "All") matches else matches.filter { it.stage.equals(selectedStage, ignoreCase = true) }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.TopCenter
     ) {
-        // Admin top action bar
-        if (isAdmin) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .widthIn(max = 840.dp)
+                .padding(horizontal = 14.dp, vertical = 10.dp)
+        ) {
+            // Admin top action bar
+            if (isAdmin) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = onAddMatchClick,
+                        colors = ButtonDefaults.buttonColors(containerColor = CricketAccent),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp)
+                            .testTag("add_match_button")
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(17.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Add Match", fontWeight = FontWeight.Bold)
+                    }
+
+                    Button(
+                        onClick = onAutoSemiFinalClick,
+                        colors = ButtonDefaults.buttonColors(containerColor = CricketGreen),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .weight(1.3f)
+                            .heightIn(min = 48.dp)
+                            .testTag("auto_brackets_button")
+                    ) {
+                        Icon(Icons.Default.FlashOn, contentDescription = null, modifier = Modifier.size(17.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Auto Semi / Final", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+            // Stage filter chips
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .horizontalScroll(rememberScrollState())
+                    .padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Button(
-                    onClick = onAddMatchClick,
-                    colors = ButtonDefaults.buttonColors(containerColor = CricketAccent),
-                    modifier = Modifier
-                        .weight(1f)
-                        .testTag("add_match_button")
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("Add Match")
-                }
-
-                Button(
-                    onClick = onAutoSemiFinalClick,
-                    colors = ButtonDefaults.buttonColors(containerColor = CricketGreen),
-                    modifier = Modifier
-                        .weight(1.3f)
-                        .testTag("auto_brackets_button")
-                ) {
-                    Icon(Icons.Default.FlashOn, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("Auto Semi / Final")
+                listOf("All", "League", "Semi Final", "Final").forEach { stage ->
+                    FilterChip(
+                        selected = selectedStage == stage,
+                        onClick = { selectedStage = stage },
+                        label = { Text(stage) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = CricketPrimary,
+                            selectedLabelColor = Color.White
+                        )
+                    )
                 }
             }
-        }
 
-        // Stage filter chips
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            listOf("All", "League", "Semi Final", "Final").forEach { stage ->
-                FilterChip(
-                    selected = selectedStage == stage,
-                    onClick = { selectedStage = stage },
-                    label = { Text(stage) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = CricketPrimary,
-                        selectedLabelColor = Color.White
-                    )
-                )
-            }
-        }
-
-        if (filteredMatches.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "No matches scheduled yet.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                items(filteredMatches, key = { it.no }) { match ->
-                    MatchCard(
-                        match = match,
-                        isAdmin = isAdmin,
-                        onEdit = { onEditMatchClick(match) },
-                        onDelete = { onDeleteMatchClick(match.no) }
-                    )
+            if (filteredMatches.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("🏏", fontSize = 44.sp)
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = "No matches scheduled yet",
+                            fontFamily = OutfitFontFamily,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentPadding = PaddingValues(bottom = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(filteredMatches, key = { it.no }) { match ->
+                        MatchCard(
+                            match = match,
+                            isAdmin = isAdmin,
+                            onEdit = { onEditMatchClick(match) },
+                            onDelete = { onDeleteMatchClick(match.no) }
+                        )
+                    }
                 }
             }
         }
@@ -153,7 +174,7 @@ fun MatchCard(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Delete Match?") },
+            title = { Text("Delete Match?", fontFamily = OutfitFontFamily, fontWeight = FontWeight.Bold) },
             text = { Text("Delete match ${match.no}?") },
             confirmButton = {
                 Button(
@@ -187,18 +208,18 @@ fun MatchCard(
     }
 
     Card(
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier
             .fillMaxWidth()
             .border(
                 1.dp,
                 MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                RoundedCornerShape(12.dp)
+                RoundedCornerShape(14.dp)
             )
             .testTag("match_card_${match.no}")
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(14.dp)) {
             // Header: Match No, Stage, Date
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -207,24 +228,26 @@ fun MatchCard(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
                         text = "Match ${match.no}",
+                        fontFamily = OutfitFontFamily,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp
+                        fontSize = 16.sp
                     )
 
                     Surface(
                         color = stageBgColor,
-                        shape = RoundedCornerShape(6.dp)
+                        shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
                             text = match.stage,
                             color = stageTextColor,
+                            fontFamily = OutfitFontFamily,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                         )
                     }
                 }
@@ -232,7 +255,7 @@ fun MatchCard(
                 if (match.date.isNotBlank()) {
                     Text(
                         text = match.date,
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -262,7 +285,7 @@ fun MatchCard(
 
             Spacer(Modifier.height(8.dp))
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(8.dp))
 
             // Result and Venue
             Row(
@@ -286,15 +309,16 @@ fun MatchCard(
 
                 Text(
                     text = resultText,
+                    fontFamily = OutfitFontFamily,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp,
+                    fontSize = 14.sp,
                     color = resultColor
                 )
 
                 if (match.note.isNotBlank()) {
                     Text(
                         text = match.note,
-                        fontSize = 11.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -302,7 +326,7 @@ fun MatchCard(
 
             // Admin action buttons
             if (isAdmin) {
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(10.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
@@ -310,12 +334,12 @@ fun MatchCard(
                 ) {
                     OutlinedButton(
                         onClick = onEdit,
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                        modifier = Modifier.height(30.dp)
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                        modifier = Modifier.heightIn(min = 38.dp)
                     ) {
-                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(15.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("Edit", fontSize = 11.sp)
+                        Text("Edit", style = MaterialTheme.typography.labelMedium)
                     }
 
                     Spacer(Modifier.width(8.dp))
@@ -323,12 +347,12 @@ fun MatchCard(
                     OutlinedButton(
                         onClick = { showDeleteConfirm = true },
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = CricketRed),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                        modifier = Modifier.height(30.dp)
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                        modifier = Modifier.heightIn(min = 38.dp)
                     ) {
-                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(15.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("Delete", fontSize = 11.sp)
+                        Text("Delete", style = MaterialTheme.typography.labelMedium)
                     }
                 }
             }
@@ -348,22 +372,23 @@ fun TeamScoreLine(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                if (isWinner) CricketGreen.copy(alpha = 0.08f) else Color.Transparent,
-                RoundedCornerShape(6.dp)
+                if (isWinner) CricketGreen.copy(alpha = 0.09f) else Color.Transparent,
+                RoundedCornerShape(8.dp)
             )
-            .padding(horizontal = 6.dp, vertical = 4.dp),
+            .padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = "Ward $teamWard",
-                fontWeight = if (isWinner) FontWeight.Bold else FontWeight.Medium,
-                fontSize = 14.sp,
+                fontFamily = OutfitFontFamily,
+                fontWeight = if (isWinner) FontWeight.Bold else FontWeight.SemiBold,
+                fontSize = 15.sp,
                 color = if (isWinner) CricketGreen else MaterialTheme.colorScheme.onSurface
             )
             if (isWinner) {
-                Spacer(Modifier.width(4.dp))
+                Spacer(Modifier.width(5.dp))
                 Text("🏆", fontSize = 12.sp)
             }
         }
@@ -378,14 +403,16 @@ fun TeamScoreLine(
 
             Text(
                 text = "$runs/$wickets ($overs ov · RR $runRate)",
-                fontWeight = if (isWinner) FontWeight.Bold else FontWeight.Normal,
-                fontSize = 13.sp,
+                fontFamily = OutfitFontFamily,
+                fontWeight = if (isWinner) FontWeight.Bold else FontWeight.Medium,
+                fontSize = 14.sp,
                 color = if (isWinner) CricketGreen else MaterialTheme.colorScheme.onSurface
             )
         } else {
             Text(
                 text = "-",
-                fontSize = 13.sp,
+                fontFamily = OutfitFontFamily,
+                fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -421,11 +448,11 @@ fun MatchEditDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(18.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.85f)
-                .padding(vertical = 12.dp)
+                .fillMaxHeight(0.86f)
+                .padding(vertical = 10.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -434,8 +461,9 @@ fun MatchEditDialog(
             ) {
                 Text(
                     text = "Match Details",
+                    fontFamily = OutfitFontFamily,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
+                    fontSize = 20.sp
                 )
 
                 Spacer(Modifier.height(10.dp))
@@ -456,6 +484,7 @@ fun MatchEditDialog(
                             label = { Text("Match No") },
                             enabled = !isEditingExisting,
                             singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.weight(1f)
                         )
 
@@ -470,6 +499,7 @@ fun MatchEditDialog(
                                 onValueChange = {},
                                 readOnly = true,
                                 label = { Text("Stage") },
+                                shape = RoundedCornerShape(12.dp),
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = stageExpanded) },
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -508,6 +538,7 @@ fun MatchEditDialog(
                                 onValueChange = {},
                                 readOnly = true,
                                 label = { Text("Team A") },
+                                shape = RoundedCornerShape(12.dp),
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = aExpanded) },
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -540,6 +571,7 @@ fun MatchEditDialog(
                                 onValueChange = {},
                                 readOnly = true,
                                 label = { Text("Team B") },
+                                shape = RoundedCornerShape(12.dp),
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = bExpanded) },
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -563,7 +595,7 @@ fun MatchEditDialog(
                     }
 
                     // Team A score
-                    Text("Team A Score (Ward $teamA)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Team A Score (Ward $teamA)", style = MaterialTheme.typography.titleSmall)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -573,6 +605,7 @@ fun MatchEditDialog(
                             onValueChange = { runsA = it },
                             label = { Text("Runs") },
                             singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.weight(1f)
                         )
                         OutlinedTextField(
@@ -580,20 +613,22 @@ fun MatchEditDialog(
                             onValueChange = { wicketsA = it },
                             label = { Text("Wkts") },
                             singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.weight(1f)
                         )
                         OutlinedTextField(
                             value = oversA,
                             onValueChange = { oversA = it },
                             label = { Text("Overs") },
-                            placeholder = { Text("e.g. 10.0") },
+                            placeholder = { Text("10.0") },
                             singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.weight(1f)
                         )
                     }
 
                     // Team B score
-                    Text("Team B Score (Ward $teamB)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Team B Score (Ward $teamB)", style = MaterialTheme.typography.titleSmall)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -603,6 +638,7 @@ fun MatchEditDialog(
                             onValueChange = { runsB = it },
                             label = { Text("Runs") },
                             singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.weight(1f)
                         )
                         OutlinedTextField(
@@ -610,14 +646,16 @@ fun MatchEditDialog(
                             onValueChange = { wicketsB = it },
                             label = { Text("Wkts") },
                             singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.weight(1f)
                         )
                         OutlinedTextField(
                             value = oversB,
                             onValueChange = { oversB = it },
                             label = { Text("Overs") },
-                            placeholder = { Text("e.g. 9.4") },
+                            placeholder = { Text("9.4") },
                             singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -641,6 +679,7 @@ fun MatchEditDialog(
                             onValueChange = {},
                             readOnly = true,
                             label = { Text("Result") },
+                            shape = RoundedCornerShape(12.dp),
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = resultExpanded) },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -658,12 +697,12 @@ fun MatchEditDialog(
                         }
                     }
 
-                    // Date & Venue note
                     OutlinedTextField(
                         value = date,
                         onValueChange = { date = it },
                         label = { Text("Date (YYYY-MM-DD)") },
                         singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -672,6 +711,7 @@ fun MatchEditDialog(
                         onValueChange = { note = it },
                         label = { Text("Venue / Note / Man of the Match") },
                         singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -680,11 +720,13 @@ fun MatchEditDialog(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     OutlinedButton(
                         onClick = onDismiss,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp)
                     ) {
                         Text("Cancel")
                     }
@@ -711,6 +753,7 @@ fun MatchEditDialog(
                         colors = ButtonDefaults.buttonColors(containerColor = CricketPrimary),
                         modifier = Modifier
                             .weight(1f)
+                            .heightIn(min = 48.dp)
                             .testTag("save_match_button")
                     ) {
                         Text("Save Match")

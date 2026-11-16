@@ -14,7 +14,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -24,6 +23,7 @@ import com.example.data.model.TournamentAccount
 import com.example.ui.theme.CricketAccent
 import com.example.ui.theme.CricketPrimary
 import com.example.ui.theme.CricketRed
+import com.example.ui.theme.OutfitFontFamily
 
 @Composable
 fun AccountsScreen(
@@ -32,67 +32,78 @@ fun AccountsScreen(
     onEditAccountClick: (TournamentAccount) -> Unit,
     onDeleteAccountClick: (String) -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(12.dp)
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.TopCenter
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .widthIn(max = 840.dp)
+                .padding(horizontal = 14.dp, vertical = 12.dp)
         ) {
-            Column {
-                Text(
-                    text = "🔑 Captain & Admin Accounts",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 17.sp
-                )
-                Text(
-                    text = "Role-based access control for ward captains",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Button(
-                onClick = onAddAccountClick,
-                colors = ButtonDefaults.buttonColors(containerColor = CricketAccent),
-                modifier = Modifier.testTag("add_account_button")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(4.dp))
-                Text("New Account")
+                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                    Text(
+                        text = "Captain & Admin Accounts",
+                        fontFamily = OutfitFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                    Text(
+                        text = "Role-based access control for ward captains",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Button(
+                    onClick = onAddAccountClick,
+                    colors = ButtonDefaults.buttonColors(containerColor = CricketAccent),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .heightIn(min = 48.dp)
+                        .testTag("add_account_button")
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(17.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("New Account", fontWeight = FontWeight.Bold)
+                }
             }
-        }
 
-        Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(10.dp))
 
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-            shape = RoundedCornerShape(8.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = "ℹ Captains can add and edit only their own ward's players. Admin can approve or reject entries, manage matches, and configure standings.",
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(10.dp)
-            )
-        }
-
-        Spacer(Modifier.height(12.dp))
-
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(accounts, key = { it.username }) { account ->
-                AccountCard(
-                    account = account,
-                    onEdit = { onEditAccountClick(account) },
-                    onDelete = { onDeleteAccountClick(account.username) }
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Captains can upload their ward's Sifaris once and submit players with citizenship verification for their own ward. Admin can approve or reject entries, manage matches, and configure standings.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(12.dp)
                 )
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(accounts, key = { it.username }) { account ->
+                    AccountCard(
+                        account = account,
+                        onEdit = { onEditAccountClick(account) },
+                        onDelete = { onDeleteAccountClick(account.username) }
+                    )
+                }
             }
         }
     }
@@ -110,7 +121,7 @@ fun AccountCard(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Delete Account?") },
+            title = { Text("Delete Account?", fontFamily = OutfitFontFamily, fontWeight = FontWeight.Bold) },
             text = { Text("Delete account ${account.username}?") },
             confirmButton = {
                 Button(
@@ -132,31 +143,31 @@ fun AccountCard(
     }
 
     Card(
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier
             .fillMaxWidth()
             .border(
                 1.dp,
                 MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                RoundedCornerShape(12.dp)
+                RoundedCornerShape(14.dp)
             )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Surface(
                     color = CricketPrimary.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.size(40.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.size(42.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
@@ -170,53 +181,55 @@ fun AccountCard(
                 Column {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
                             text = account.username,
+                            fontFamily = OutfitFontFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp
                         )
 
                         Surface(
                             color = if (account.role == "admin") CricketPrimary.copy(alpha = 0.15f) else CricketAccent.copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(4.dp)
+                            shape = RoundedCornerShape(6.dp)
                         ) {
                             Text(
                                 text = if (account.role == "admin") "Admin" else "Captain W${account.ward}",
+                                fontFamily = OutfitFontFamily,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (account.role == "admin") CricketPrimary else CricketAccent,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
                             )
                         }
                     }
 
                     Text(
                         text = account.displayName,
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                IconButton(onClick = onEdit) {
+                IconButton(onClick = onEdit, modifier = Modifier.size(44.dp)) {
                     Icon(
                         Icons.Default.Edit,
                         contentDescription = "Edit Account",
                         tint = CricketPrimary,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(19.dp)
                     )
                 }
 
                 if (!isPrimaryAdmin) {
-                    IconButton(onClick = { showDeleteConfirm = true }) {
+                    IconButton(onClick = { showDeleteConfirm = true }, modifier = Modifier.size(44.dp)) {
                         Icon(
                             Icons.Default.Delete,
                             contentDescription = "Delete Account",
                             tint = CricketRed,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(19.dp)
                         )
                     }
                 }
@@ -244,10 +257,10 @@ fun AccountEditDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(18.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp)
+                .padding(vertical = 12.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -257,8 +270,9 @@ fun AccountEditDialog(
             ) {
                 Text(
                     text = if (isEditing) "Edit Account: $username" else "Create New Account",
+                    fontFamily = OutfitFontFamily,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
+                    fontSize = 19.sp
                 )
 
                 if (!isEditing) {
@@ -267,6 +281,7 @@ fun AccountEditDialog(
                         onValueChange = { username = it },
                         label = { Text("Username") },
                         singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -276,6 +291,7 @@ fun AccountEditDialog(
                     onValueChange = { password = it },
                     label = { Text(if (isEditing) "Password (blank = keep)" else "Password") },
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -284,6 +300,7 @@ fun AccountEditDialog(
                     onValueChange = { displayName = it },
                     label = { Text("Display Name") },
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -299,6 +316,7 @@ fun AccountEditDialog(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Role") },
+                        shape = RoundedCornerShape(12.dp),
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = roleExpanded) },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -337,6 +355,7 @@ fun AccountEditDialog(
                             onValueChange = {},
                             readOnly = true,
                             label = { Text("Assigned Ward") },
+                            shape = RoundedCornerShape(12.dp),
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = wardExpanded) },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -359,15 +378,17 @@ fun AccountEditDialog(
                     }
                 }
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(6.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     OutlinedButton(
                         onClick = onDismiss,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp)
                     ) {
                         Text("Cancel")
                     }
@@ -384,7 +405,9 @@ fun AccountEditDialog(
                             onSave(saved, !isEditing)
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = CricketPrimary),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp)
                     ) {
                         Text("Save")
                     }

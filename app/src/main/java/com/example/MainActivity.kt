@@ -27,9 +27,12 @@ import com.example.ui.components.ChangePasswordDialog
 import com.example.ui.components.LoginDialog
 import com.example.ui.components.PlayerEditDialog
 import com.example.ui.components.PlayerProfileDialog
+import com.example.ui.components.PrivateDocumentDialog
+import com.example.ui.components.SifarisDialog
 import com.example.ui.screens.*
 import com.example.ui.theme.CricketPrimary
 import com.example.ui.theme.MyApplicationTheme
+import com.example.ui.theme.OutfitFontFamily
 import com.example.ui.viewmodel.TournamentTab
 import com.example.ui.viewmodel.TournamentViewModel
 
@@ -60,6 +63,7 @@ fun TournamentApp(viewModel: TournamentViewModel) {
     val standings by viewModel.standings.collectAsStateWithLifecycle()
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
     val configs by viewModel.configs.collectAsStateWithLifecycle()
+    val uploadedPaperWards by viewModel.uploadedPaperWards.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -113,7 +117,13 @@ fun TournamentApp(viewModel: TournamentViewModel) {
                             Icon(Icons.Default.Group, contentDescription = "Players")
                         }
                     },
-                    label = { Text("Players", fontWeight = FontWeight.SemiBold) },
+                    label = {
+                        Text(
+                            "Players",
+                            fontFamily = OutfitFontFamily,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = CricketPrimary,
                         selectedTextColor = CricketPrimary,
@@ -126,7 +136,13 @@ fun TournamentApp(viewModel: TournamentViewModel) {
                     selected = uiState.currentTab == TournamentTab.MATCHES,
                     onClick = { viewModel.selectTab(TournamentTab.MATCHES) },
                     icon = { Icon(Icons.Default.SportsCricket, contentDescription = "Matches") },
-                    label = { Text("Matches", fontWeight = FontWeight.SemiBold) },
+                    label = {
+                        Text(
+                            "Matches",
+                            fontFamily = OutfitFontFamily,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = CricketPrimary,
                         selectedTextColor = CricketPrimary,
@@ -139,7 +155,13 @@ fun TournamentApp(viewModel: TournamentViewModel) {
                     selected = uiState.currentTab == TournamentTab.STANDINGS,
                     onClick = { viewModel.selectTab(TournamentTab.STANDINGS) },
                     icon = { Icon(Icons.Default.BarChart, contentDescription = "Standings") },
-                    label = { Text("Standings", fontWeight = FontWeight.SemiBold) },
+                    label = {
+                        Text(
+                            "Standings",
+                            fontFamily = OutfitFontFamily,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = CricketPrimary,
                         selectedTextColor = CricketPrimary,
@@ -153,7 +175,13 @@ fun TournamentApp(viewModel: TournamentViewModel) {
                         selected = uiState.currentTab == TournamentTab.ACCOUNTS,
                         onClick = { viewModel.selectTab(TournamentTab.ACCOUNTS) },
                         icon = { Icon(Icons.Default.VpnKey, contentDescription = "Accounts") },
-                        label = { Text("Accounts", fontWeight = FontWeight.SemiBold) },
+                        label = {
+                            Text(
+                                "Accounts",
+                                fontFamily = OutfitFontFamily,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = CricketPrimary,
                             selectedTextColor = CricketPrimary,
@@ -181,11 +209,13 @@ fun TournamentApp(viewModel: TournamentViewModel) {
                         statusFilter = uiState.statusFilter,
                         searchQuery = uiState.searchQuery,
                         currentUser = uiState.currentUser,
+                        uploadedPaperWards = uploadedPaperWards,
                         onWardSelected = { viewModel.setWardFilter(it) },
                         onStatusFilterSelected = { viewModel.setStatusFilter(it) },
                         onSearchChanged = { viewModel.setSearchQuery(it) },
                         onPlayerClick = { viewModel.openPlayerProfile(it) },
                         onAddPlayerClick = { viewModel.openAddPlayer() },
+                        onOpenSifarisClick = { viewModel.openSifarisDialog() },
                         onExportCsvClick = {
                             val csvContent = viewModel.getCsvData()
                             val sendIntent = Intent(Intent.ACTION_SEND).apply {
@@ -244,16 +274,57 @@ fun TournamentApp(viewModel: TournamentViewModel) {
         },
         onApprove = { id -> viewModel.setPlayerStatus(id, "approved") },
         onReject = { id -> viewModel.setPlayerStatus(id, "rejected") },
-        onDelete = { id -> viewModel.deletePlayer(id) }
+        onDelete = { id -> viewModel.deletePlayer(id) },
+        onViewCitizenshipDoc = { player ->
+            viewModel.viewPrivateDoc(
+                kind = "citizen",
+                id = player.id,
+                title = "${player.name} — Citizenship"
+            )
+        }
     )
+
+    val captainWard = uiState.currentUser?.ward ?: 0
+    val hasWardSifaris = uiState.currentUser?.role != "captain" || (captainWard in uploadedPaperWards)
 
     PlayerEditDialog(
         isOpen = uiState.isAddEditPlayerOpen,
         player = uiState.playerBeingEdited,
         currentUser = uiState.currentUser,
+        hasWardSifaris = hasWardSifaris,
         isSaving = uiState.isSavingPlayer,
         onDismiss = { viewModel.closeAddEditPlayer() },
-        onSave = { updated -> viewModel.savePlayer(updated) }
+        onOpenSifaris = {
+            viewModel.closeAddEditPlayer()
+            viewModel.openSifarisDialog()
+        },
+        onSave = { updated, citizenDataUrl ->
+            viewModel.savePlayer(updated, citizenDataUrl)
+        }
+    )
+
+    SifarisDialog(
+        isOpen = uiState.isSifarisDialogOpen,
+        currentUser = uiState.currentUser,
+        uploadedWards = uploadedPaperWards,
+        isUploading = uiState.isUploadingSifaris,
+        onDismiss = { viewModel.closeSifarisDialog() },
+        onUploadSifaris = { ward, paperDataUrl ->
+            viewModel.uploadSifaris(ward, paperDataUrl)
+        },
+        onViewSifaris = { ward ->
+            viewModel.viewPrivateDoc(
+                kind = "sifaris",
+                id = ward.toString(),
+                title = "Ward $ward Sifaris"
+            )
+        }
+    )
+
+    PrivateDocumentDialog(
+        document = uiState.viewingDocument,
+        isLoading = uiState.isLoadingDoc,
+        onDismiss = { viewModel.closePrivateDoc() }
     )
 
     MatchEditDialog(
@@ -287,7 +358,7 @@ fun TournamentApp(viewModel: TournamentViewModel) {
     if (uiState.showIncompleteLeagueConfirm) {
         AlertDialog(
             onDismissRequest = { viewModel.dismissIncompleteLeagueConfirm() },
-            title = { Text("Create Semi Finals?") },
+            title = { Text("Create Semi Finals?", fontFamily = OutfitFontFamily, fontWeight = FontWeight.Bold) },
             text = { Text("Some league matches have no result yet. Create semi finals from the current table?") },
             confirmButton = {
                 Button(onClick = { viewModel.autoGenerateKnockouts(confirmIncomplete = true) }) {

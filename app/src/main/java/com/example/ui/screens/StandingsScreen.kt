@@ -20,9 +20,9 @@ import androidx.compose.ui.unit.sp
 import com.example.data.model.StandingRow
 import com.example.data.model.TournamentAccount
 import com.example.data.model.TournamentMatch
-import com.example.ui.theme.CricketGold
 import com.example.ui.theme.CricketGreen
 import com.example.ui.theme.CricketPrimary
+import com.example.ui.theme.OutfitFontFamily
 import java.util.Locale
 
 @Composable
@@ -42,7 +42,6 @@ fun StandingsScreen(
 ) {
     val isAdmin = currentUser?.role == "admin"
 
-    // Derive auto winner and runner-up from Final match if present
     val finalMatch = matches.find { it.stage.equals("Final", ignoreCase = true) }
     val autoChampion = if (finalMatch != null) {
         val win = finalMatch.calculatedWinner()
@@ -74,227 +73,242 @@ fun StandingsScreen(
     )
     val showHonorsSection = isAdmin || honorCards.any { (_, v, auto) -> v.isNotBlank() || auto.isNotBlank() }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(12.dp)
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.TopCenter
     ) {
-        if (showHonorsSection) {
-            Text(
-                text = "🏆 Tournament Honors & Awards",
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .widthIn(max = 880.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 14.dp, vertical = 12.dp)
+        ) {
+            if (showHonorsSection) {
+                Text(
+                    text = "🏆 Tournament Honors & Awards",
+                    fontFamily = OutfitFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (isAdmin || champion.isNotBlank() || autoChampion.isNotBlank()) {
+                        HonorCard(
+                            title = "🏆 Winner (Champion)",
+                            value = if (isAdmin) champion else champion.ifBlank { autoChampion },
+                            isAdmin = isAdmin,
+                            onValueChange = { champion = it },
+                            placeholder = if (autoChampion.isNotBlank()) "Auto: $autoChampion" else "Ward Team"
+                        )
+                    }
+                    if (isAdmin || runnerup.isNotBlank() || autoRunnerUp.isNotBlank()) {
+                        HonorCard(
+                            title = "🥈 Runner-up",
+                            value = if (isAdmin) runnerup else runnerup.ifBlank { autoRunnerUp },
+                            isAdmin = isAdmin,
+                            onValueChange = { runnerup = it },
+                            placeholder = if (autoRunnerUp.isNotBlank()) "Auto: $autoRunnerUp" else "Ward Team"
+                        )
+                    }
+                    if (isAdmin || mom.isNotBlank()) {
+                        HonorCard(
+                            title = "⭐ Man of the Tournament",
+                            value = mom,
+                            isAdmin = isAdmin,
+                            onValueChange = { mom = it },
+                            placeholder = "Player Name"
+                        )
+                    }
+                    if (isAdmin || bestbat.isNotBlank()) {
+                        HonorCard(
+                            title = "🏏 Best Batsman",
+                            value = bestbat,
+                            isAdmin = isAdmin,
+                            onValueChange = { bestbat = it },
+                            placeholder = "Player Name"
+                        )
+                    }
+                    if (isAdmin || bestbowl.isNotBlank()) {
+                        HonorCard(
+                            title = "🎯 Best Bowler",
+                            value = bestbowl,
+                            isAdmin = isAdmin,
+                            onValueChange = { bestbowl = it },
+                            placeholder = "Player Name"
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+            }
+
+            // Standings Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "📊 League Points Table",
+                    fontFamily = OutfitFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp
+                )
+
+                Surface(
+                    color = CricketGreen.copy(alpha = 0.14f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "Top 4 → Semi-Finals",
+                        color = CricketGreen,
+                        fontFamily = OutfitFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
+                    )
+                }
+            }
 
             Spacer(Modifier.height(8.dp))
 
-            Row(
+            // Full Points Table with Horizontal Scroll
+            Card(
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                        RoundedCornerShape(14.dp)
+                    )
             ) {
-                if (isAdmin || champion.isNotBlank() || autoChampion.isNotBlank()) {
-                    HonorCard(
-                        title = "🏆 Winner (Champion)",
-                        value = if (isAdmin) champion else champion.ifBlank { autoChampion },
-                        isAdmin = isAdmin,
-                        onValueChange = { champion = it },
-                        placeholder = if (autoChampion.isNotBlank()) "Auto: $autoChampion" else "Ward Team"
-                    )
-                }
-                if (isAdmin || runnerup.isNotBlank() || autoRunnerUp.isNotBlank()) {
-                    HonorCard(
-                        title = "🥈 Runner-up",
-                        value = if (isAdmin) runnerup else runnerup.ifBlank { autoRunnerUp },
-                        isAdmin = isAdmin,
-                        onValueChange = { runnerup = it },
-                        placeholder = if (autoRunnerUp.isNotBlank()) "Auto: $autoRunnerUp" else "Ward Team"
-                    )
-                }
-                if (isAdmin || mom.isNotBlank()) {
-                    HonorCard(
-                        title = "⭐ Man of the Tournament",
-                        value = mom,
-                        isAdmin = isAdmin,
-                        onValueChange = { mom = it },
-                        placeholder = "Player Name"
-                    )
-                }
-                if (isAdmin || bestbat.isNotBlank()) {
-                    HonorCard(
-                        title = "🏏 Best Batsman",
-                        value = bestbat,
-                        isAdmin = isAdmin,
-                        onValueChange = { bestbat = it },
-                        placeholder = "Player Name"
-                    )
-                }
-                if (isAdmin || bestbowl.isNotBlank()) {
-                    HonorCard(
-                        title = "🎯 Best Bowler",
-                        value = bestbowl,
-                        isAdmin = isAdmin,
-                        onValueChange = { bestbowl = it },
-                        placeholder = "Player Name"
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
-        }
-
-        // Standings Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "📊 League Points Table",
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
-            )
-
-            Surface(
-                color = CricketGreen.copy(alpha = 0.15f),
-                shape = RoundedCornerShape(6.dp)
-            ) {
-                Text(
-                    text = "Top 4 Qualify for Semi-Finals",
-                    color = CricketGreen,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                )
-            }
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        // Full Points Table with Horizontal Scroll
-        Card(
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(
-                    1.dp,
-                    MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                    RoundedCornerShape(12.dp)
-                )
-        ) {
-            Box(modifier = Modifier.horizontalScroll(rememberScrollState())) {
-                Column(modifier = Modifier.padding(8.dp)) {
-                    // Header Row
-                    Row(
-                        modifier = Modifier
-                            .background(
-                                MaterialTheme.colorScheme.surfaceVariant,
-                                RoundedCornerShape(6.dp)
-                            )
-                            .padding(vertical = 8.dp, horizontal = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        TableCell(text = "#", width = 36.dp, isHeader = true)
-                        TableCell(text = "Team", width = 90.dp, isHeader = true, align = TextAlign.Start)
-                        TableCell(text = "P", width = 38.dp, isHeader = true)
-                        TableCell(text = "W", width = 38.dp, isHeader = true)
-                        TableCell(text = "L", width = 38.dp, isHeader = true)
-                        TableCell(text = "T/NR", width = 45.dp, isHeader = true)
-                        TableCell(text = "Runs For", width = 68.dp, isHeader = true)
-                        TableCell(text = "Overs", width = 56.dp, isHeader = true)
-                        TableCell(text = "Runs Ag.", width = 68.dp, isHeader = true)
-                        TableCell(text = "Overs", width = 56.dp, isHeader = true)
-                        TableCell(text = "Pts", width = 45.dp, isHeader = true)
-                        TableCell(text = "NRR", width = 74.dp, isHeader = true)
-                    }
-
-                    Spacer(Modifier.height(4.dp))
-
-                    // Team Rows
-                    standings.forEachIndexed { index, row ->
-                        val isTop4 = anyLeaguePlayed && index < 4
-                        val rowBg = if (isTop4) CricketGreen.copy(alpha = 0.09f) else Color.Transparent
-
+                Box(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        // Header Row
                         Row(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .background(rowBg, RoundedCornerShape(4.dp))
-                                .padding(vertical = 6.dp, horizontal = 4.dp),
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant,
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .padding(vertical = 9.dp, horizontal = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            TableCell(text = "${index + 1}", width = 36.dp, isBold = isTop4)
-                            TableCell(
-                                text = "Ward ${row.ward}",
-                                width = 90.dp,
-                                align = TextAlign.Start,
-                                isBold = true,
-                                color = if (isTop4) CricketGreen else MaterialTheme.colorScheme.onSurface
-                            )
-                            TableCell(text = "${row.played}", width = 38.dp)
-                            TableCell(text = "${row.won}", width = 38.dp)
-                            TableCell(text = "${row.lost}", width = 38.dp)
-                            TableCell(text = "${row.tie}", width = 45.dp)
-                            TableCell(text = "${row.runsFor}", width = 68.dp)
-                            TableCell(text = String.format(Locale.US, "%.1f", row.oversFor), width = 56.dp)
-                            TableCell(text = "${row.runsAgainst}", width = 68.dp)
-                            TableCell(text = String.format(Locale.US, "%.1f", row.oversAgainst), width = 56.dp)
-                            TableCell(text = "${row.points}", width = 45.dp, isBold = true, color = CricketPrimary)
-                            val nrrPrefix = if (row.nrr > 0) "+" else ""
-                            TableCell(
-                                text = "$nrrPrefix${String.format(Locale.US, "%.3f", row.nrr)}",
-                                width = 74.dp,
-                                isBold = true,
-                                color = if (row.nrr >= 0) CricketGreen else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            TableCell(text = "#", width = 36.dp, isHeader = true)
+                            TableCell(text = "Team", width = 90.dp, isHeader = true, align = TextAlign.Start)
+                            TableCell(text = "P", width = 38.dp, isHeader = true)
+                            TableCell(text = "W", width = 38.dp, isHeader = true)
+                            TableCell(text = "L", width = 38.dp, isHeader = true)
+                            TableCell(text = "T/NR", width = 45.dp, isHeader = true)
+                            TableCell(text = "Runs For", width = 68.dp, isHeader = true)
+                            TableCell(text = "Overs", width = 56.dp, isHeader = true)
+                            TableCell(text = "Runs Ag.", width = 68.dp, isHeader = true)
+                            TableCell(text = "Overs", width = 56.dp, isHeader = true)
+                            TableCell(text = "Pts", width = 45.dp, isHeader = true)
+                            TableCell(text = "NRR", width = 76.dp, isHeader = true)
                         }
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+
+                        Spacer(Modifier.height(4.dp))
+
+                        // Team Rows
+                        standings.forEachIndexed { index, row ->
+                            val isTop4 = anyLeaguePlayed && index < 4
+                            val rowBg = if (isTop4) CricketGreen.copy(alpha = 0.09f) else Color.Transparent
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(rowBg, RoundedCornerShape(6.dp))
+                                    .padding(vertical = 8.dp, horizontal = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                TableCell(text = "${index + 1}", width = 36.dp, isBold = isTop4)
+                                TableCell(
+                                    text = "Ward ${row.ward}",
+                                    width = 90.dp,
+                                    align = TextAlign.Start,
+                                    isBold = true,
+                                    color = if (isTop4) CricketGreen else MaterialTheme.colorScheme.onSurface
+                                )
+                                TableCell(text = "${row.played}", width = 38.dp)
+                                TableCell(text = "${row.won}", width = 38.dp)
+                                TableCell(text = "${row.lost}", width = 38.dp)
+                                TableCell(text = "${row.tie}", width = 45.dp)
+                                TableCell(text = "${row.runsFor}", width = 68.dp)
+                                TableCell(text = String.format(Locale.US, "%.1f", row.oversFor), width = 56.dp)
+                                TableCell(text = "${row.runsAgainst}", width = 68.dp)
+                                TableCell(text = String.format(Locale.US, "%.1f", row.oversAgainst), width = 56.dp)
+                                TableCell(text = "${row.points}", width = 45.dp, isBold = true, color = CricketPrimary)
+                                val nrrPrefix = if (row.nrr > 0) "+" else ""
+                                TableCell(
+                                    text = "$nrrPrefix${String.format(Locale.US, "%.3f", row.nrr)}",
+                                    width = 76.dp,
+                                    isBold = true,
+                                    color = if (row.nrr >= 0) CricketGreen else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+                        }
                     }
                 }
             }
-        }
 
-        Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(10.dp))
 
-        // Explanation text
-        Text(
-            text = "ℹ Auto-calculated from completed League matches. Win = 2 pts, Tie/No-result = 1 pt. Top 4 teams advance to Semi-Finals (SF1: 1st vs 4th, SF2: 2nd vs 3rd). NRR = (Runs For ÷ Overs Faced) − (Runs Against ÷ Overs Bowled). If a team is all out, full quota overs are counted.",
-            fontSize = 11.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            lineHeight = 16.sp
-        )
+            Text(
+                text = "Auto-calculated from completed League matches. Win = 2 pts, Tie/No-result = 1 pt. Top 4 teams advance to Semi-Finals (SF1: 1st vs 4th, SF2: 2nd vs 3rd). NRR = (Runs For ÷ Overs Faced) − (Runs Against ÷ Overs Bowled). Full quota overs apply on all-out.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
-        // Admin Save & Config Section
-        if (isAdmin) {
-            Spacer(Modifier.height(14.dp))
-            Card(
-                shape = RoundedCornerShape(10.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Text("⚙ Tournament Rules & Save", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = maxovers,
-                        onValueChange = { maxovers = it },
-                        label = { Text("Max overs per innings (all-out NRR rule)") },
-                        placeholder = { Text("e.g. 10") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(0.6f)
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    Button(
-                        onClick = {
-                            onSaveAwardsAndConfig(champion, runnerup, mom, bestbat, bestbowl, maxovers)
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = CricketGreen),
-                        modifier = Modifier.testTag("save_standings_config_button")
-                    ) {
-                        Text("💾 Save Winners & Settings")
+            if (isAdmin) {
+                Spacer(Modifier.height(14.dp))
+                Card(
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Text(
+                            "Tournament Rules & Save",
+                            fontFamily = OutfitFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = maxovers,
+                            onValueChange = { maxovers = it },
+                            label = { Text("Max overs per innings (all-out NRR rule)") },
+                            placeholder = { Text("e.g. 10") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth(0.65f)
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        Button(
+                            onClick = {
+                                onSaveAwardsAndConfig(champion, runnerup, mom, bestbat, bestbowl, maxovers)
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = CricketGreen),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .heightIn(min = 48.dp)
+                                .testTag("save_standings_config_button")
+                        ) {
+                            Text("Save Winners & Settings", fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }
@@ -313,8 +327,9 @@ fun TableCell(
 ) {
     Text(
         text = text,
-        fontSize = if (isHeader) 11.sp else 12.sp,
-        fontWeight = if (isHeader || isBold) FontWeight.Bold else FontWeight.Normal,
+        fontFamily = if (isHeader || isBold) OutfitFontFamily else MaterialTheme.typography.bodyMedium.fontFamily,
+        fontSize = if (isHeader) 11.5.sp else 12.5.sp,
+        fontWeight = if (isHeader || isBold) FontWeight.Bold else FontWeight.Medium,
         textAlign = align,
         color = if (color != Color.Unspecified) color else if (isHeader) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.width(width)
@@ -332,22 +347,23 @@ fun HonorCard(
     Surface(
         color = Color(0xFFFFF9E6),
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFFE082)),
-        shape = RoundedCornerShape(10.dp),
-        modifier = Modifier.width(160.dp)
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.width(168.dp)
     ) {
         Column(
-            modifier = Modifier.padding(10.dp),
+            modifier = Modifier.padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = title,
-                fontSize = 11.sp,
+                fontFamily = OutfitFontFamily,
+                fontSize = 11.5.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF7A5B00),
                 textAlign = TextAlign.Center
             )
 
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(6.dp))
 
             if (isAdmin) {
                 OutlinedTextField(
@@ -355,13 +371,15 @@ fun HonorCard(
                     onValueChange = onValueChange,
                     placeholder = { Text(placeholder, fontSize = 11.sp) },
                     singleLine = true,
-                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold),
+                    shape = RoundedCornerShape(10.dp),
+                    textStyle = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
                     modifier = Modifier.fillMaxWidth()
                 )
             } else {
                 Text(
                     text = value.ifBlank { "TBD" },
-                    fontSize = 14.sp,
+                    fontFamily = OutfitFontFamily,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF3E2723),
                     textAlign = TextAlign.Center

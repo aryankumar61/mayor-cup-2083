@@ -19,5 +19,10 @@ data class Player(
     val bowl: String = "None",
     val cap: String = "",
     val photo: String = "",
-    val status: String = "approved" // "approved", "pending", "rejected"
+    val status: String = "approved", // "approved", "pending", "rejected"
+    val citizen: String = "",
+    val citizenimg: String = "",
+    val citizenmime: String = "",
+    val by: String = "",
+    val updated: String = ""
 )

@@ -81,8 +81,7 @@ fun PlayerAvatarImage(
 }
 
 /**
- * Resizes an image Uri to max 420px and encodes it as JPEG Data URL (quality 72),
- * matching the HTML dashboard's `pick(inp)` behavior for Google Sheet compatibility.
+ * Resizes an image Uri to maxDim and encodes it as JPEG Data URL.
  */
 fun encodeImageUriToDataUrl(context: Context, uri: Uri, maxDim: Int = 420, quality: Int = 72): String? {
     return try {
@@ -104,6 +103,26 @@ fun encodeImageUriToDataUrl(context: Context, uri: Uri, maxDim: Int = 420, quali
 
         val base64 = Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)
         "data:image/jpeg;base64,$base64"
+    } catch (_: Exception) {
+        null
+    }
+}
+
+/**
+ * Encodes any image or PDF Uri (e.g. Ward Sifaris or Citizenship photo) into a `data:<mime>;base64,...` string.
+ * Images are resized to max 1000px for crisp readability while keeping upload size fast.
+ */
+fun encodeDocumentUriToDataUrl(context: Context, uri: Uri): String? {
+    return try {
+        val mime = context.contentResolver.getType(uri) ?: "image/jpeg"
+        if (mime.startsWith("image/", ignoreCase = true)) {
+            encodeImageUriToDataUrl(context, uri, maxDim = 1000, quality = 78)
+        } else {
+            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return null
+            if (bytes.size > 4 * 1024 * 1024) return null // Keep under Apps Script payload limits
+            val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
+            "data:$mime;base64,$base64"
+        }
     } catch (_: Exception) {
         null
     }
