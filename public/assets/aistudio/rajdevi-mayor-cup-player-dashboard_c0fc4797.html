@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b3d91">
+<title>Rajdevi Mayor Cup 2083 - Player Dashboard</title>
+<style>
+:root{--bg:#f3f5f9;--card:#fff;--ink:#1b2333;--mut:#6b7385;--pri:#0b5ed7;--acc:#e8590c;--ok:#198754;--bad:#c92a2a;--line:#e1e5ee}
+*{box-sizing:border-box;margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{background:var(--bg);color:var(--ink);padding-bottom:70px}
+header{background:linear-gradient(135deg,#0b3d91,#0b5ed7);color:#fff;padding:12px 16px;position:sticky;top:0;z-index:20;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+header h1{font-size:17px;line-height:1.2}header small{opacity:.85;font-size:12px}
+.hr{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.me{font-size:12px;background:rgba(255,255,255,.2);padding:4px 10px;border-radius:12px}
+.btn{border:0;border-radius:8px;padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer;background:var(--pri);color:#fff}
+.btn.s{background:#fff;color:var(--pri);border:1px solid var(--line)}.btn.o{background:var(--acc)}.btn.r{background:var(--bad)}.btn.g{background:var(--ok)}.btn.sm{padding:5px 9px;font-size:12px}
+.wrap{max-width:1100px;margin:auto;padding:12px}
+.nav{display:flex;gap:6px;margin-bottom:12px}.nav .btn{flex:1;background:#fff;color:var(--ink);border:1px solid var(--line)}.nav .btn.on{background:var(--ink);color:#fff}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:12px}
+.stat{background:var(--card);border-radius:10px;padding:10px;text-align:center;border:1px solid var(--line)}
+.stat b{display:block;font-size:22px;color:var(--pri)}.stat span{font-size:12px;color:var(--mut)}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px}
+.tab{flex:none;padding:8px 12px;border-radius:20px;background:var(--card);border:1px solid var(--line);font-size:13px;font-weight:600;cursor:pointer}
+.tab.on{background:var(--pri);color:#fff;border-color:var(--pri)}.tab i{font-style:normal;opacity:.7;margin-left:4px}
+.bar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}.bar input{flex:1;min-width:150px}.bar select{width:auto}
+input,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#fff}
+label{font-size:12px;color:var(--mut);font-weight:600;display:block;margin-bottom:3px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.pc{background:var(--card);border-radius:12px;border:1px solid var(--line);overflow:hidden;cursor:pointer;position:relative}
+.pc img,.ph{width:100%;aspect-ratio:1/1;object-fit:cover;background:#dfe5f1;display:flex;align-items:center;justify-content:center;font-size:40px;color:#9aa5bd}
+.pc .in{padding:8px 10px}.pc b{font-size:14px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pc small{color:var(--mut);font-size:12px}
+.bd{position:absolute;top:6px;left:6px;background:var(--acc);color:#fff;font-size:11px;font-weight:700;border-radius:6px;padding:2px 7px}
+.jn{position:absolute;top:6px;right:6px;background:#0b3d91;color:#fff;font-size:12px;font-weight:700;border-radius:6px;padding:2px 7px}
+.cp{position:absolute;bottom:52px;right:6px;background:#f59f00;color:#000;font-size:10px;font-weight:700;border-radius:6px;padding:2px 6px}
+.stt{position:absolute;bottom:52px;left:6px;font-size:10px;font-weight:700;border-radius:6px;padding:2px 6px;color:#fff}
+.stt.pending{background:#f59f00;color:#000}.stt.rejected{background:var(--bad)}
+.empty{text-align:center;color:var(--mut);padding:40px 10px;grid-column:1/-1}
+.md{position:fixed;inset:0;background:rgba(10,20,40,.6);display:none;align-items:flex-start;justify-content:center;overflow:auto;z-index:50;padding:14px}
+.md.on{display:flex}.box{background:#fff;border-radius:14px;width:100%;max-width:560px;padding:16px;margin:auto}
+.box h2{font-size:17px;margin-bottom:12px}.note{background:#fff4d6;border-radius:8px;padding:8px 10px;font-size:12px;margin-bottom:10px}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:10px}.fg .w{grid-column:1/-1}
+.ph-up{display:flex;gap:12px;align-items:center;margin-bottom:12px}.ph-up .pv{width:90px;height:90px;border-radius:12px;object-fit:cover;background:#dfe5f1;flex:none}
+.acts{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}.acts .btn{flex:1}
+.prof{text-align:center}.prof img{width:150px;height:150px;border-radius:14px;object-fit:cover;background:#dfe5f1}
+.prof h2{margin:8px 0 2px}.prof p{color:var(--mut);font-size:13px}
+table{width:100%;border-collapse:collapse;margin-top:10px;text-align:left}td,th{padding:7px 4px;border-bottom:1px solid var(--line);font-size:14px}.kv td:first-child{color:var(--mut);width:40%}
+.tw{overflow-x:auto;background:#fff;border-radius:12px;border:1px solid var(--line);padding:6px}
+.tw th{font-size:12px;color:var(--mut);text-align:center}.tw td{text-align:center}.tw td:nth-child(2){text-align:left;font-weight:600}
+.tw input{width:58px;padding:5px;text-align:center}
+.win{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:12px}
+.win div{background:linear-gradient(135deg,#fff7d6,#ffe9a8);border-radius:12px;padding:12px;text-align:center}.win small{font-size:11px;color:#7a5b00;font-weight:700}.win b{display:block;font-size:16px;margin-top:3px}
+#tt{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#1b2333;color:#fff;padding:10px 18px;border-radius:24px;font-size:14px;display:none;z-index:99}
+@media print{header,.stats,.tabs,.bar,.nav,.acts,#tt{display:none!important}.md{position:static;background:none;display:block}.wrap{display:none}.md:not(.on){display:none}}
+
+button{touch-action:manipulation}
+.nav .btn{display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.1}.nav .btn span{font-size:18px}
+.mc{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.mh{display:flex;gap:8px;align-items:center;margin-bottom:6px}.mh small{margin-left:auto;color:var(--mut)}
+.sg{font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px}
+.ml{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line);font-size:14px}.ml.w{font-weight:700;color:var(--ok)}.ml small{color:var(--mut);font-weight:400}
+.mr{font-size:13px;margin-top:6px}
+.mo{display:none}
+@media(max-width:700px){
+ header{padding:10px 12px}header h1{font-size:15px}header small{font-size:11px}
+ .hr .me{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .nav{position:fixed;bottom:0;left:0;right:0;z-index:30;background:#fff;margin:0;gap:0;border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -2px 10px rgba(0,0,0,.08)}
+ .nav .btn{border:0;border-radius:10px;font-size:11px;padding:6px 2px;background:transparent}
+ .nav .btn.on{background:#e7efff;color:var(--pri)}
+ body{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+ .wrap{padding:10px}
+ input,select{font-size:16px;padding:11px}
+ .stats{grid-template-columns:repeat(3,1fr);gap:6px}.stat{padding:8px 4px}.stat b{font-size:19px}
+ .grid{grid-template-columns:repeat(2,1fr);gap:8px}
+ .bar input{flex:1 1 100%}.bar select{flex:1}
+ #addB{position:fixed;right:14px;bottom:calc(78px + env(safe-area-inset-bottom));z-index:25;border-radius:30px;padding:14px 20px;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+ .md{padding:0;align-items:flex-end}
+ .box{max-width:none;border-radius:18px 18px 0 0;max-height:94vh;overflow:auto;margin:0;padding:16px 14px calc(18px + env(safe-area-inset-bottom))}
+ .acts .btn{flex:1 1 45%;padding:12px}.acts .btn.sm{padding:9px}
+ .hm{display:none}.tw.full .hm{display:table-cell}
+ .mo{display:inline-block;margin-bottom:8px}
+ .tw input{width:52px}
+ #tt{bottom:96px;width:max-content;max-width:90%;text-align:center}
+}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>🏏 Rajdevi Mayor Cup 2083</h1><small>Player Details · 9 Ward Teams</small></div>
+  <div class="hr" id="hr"></div>
+</header>
+<div class="wrap">
+  <div class="nav" id="nav"></div>
+  <div id="vP">
+    <div class="stats" id="stats"></div>
+    <div class="tabs" id="tabs"></div>
+    <div class="bar">
+      <input id="q" placeholder="Search name / mobile / jersey..." oninput="render()">
+      <select id="fs" onchange="render()"></select>
+      <button class="btn o" id="addB" onclick="openForm()" style="display:none">+ Add Player</button>
+      <button class="btn g" id="csvB" onclick="csv()" style="display:none">⬇ CSV</button>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+  <div id="vM" style="display:none"></div>
+  <div id="vS" style="display:none"></div>
+  <div id="vU" style="display:none"></div>
+</div>
+
+<div class="md" id="mLogin"><div class="box">
+  <h2>Login</h2>
+  <div class="fg"><div class="w"><label>Username</label><input id="lu" autocapitalize="none" autocomplete="username"></div>
+  <div class="w"><label>Password</label><input id="lp" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()"></div></div>
+  <div class="acts"><button class="btn s" onclick="closeM('mLogin')">Cancel</button><button class="btn" onclick="login()">Login</button></div>
+</div></div>
+
+<div class="md" id="mForm"><div class="box">
+  <h2 id="fTitle">Add Player</h2>
+  <div class="note" id="fNote" style="display:none">⏳ Captain entries are saved as <b>Pending</b> and show publicly only after admin approval.</div>
+  <div class="ph-up"><img class="pv" id="pv"><div><label>Player Photo</label><input type="file" id="pf" accept="image/*" onchange="pick(this)"></div></div>
+  <div class="fg" id="fg"></div>
+  <div class="acts"><button class="btn s" onclick="closeM('mForm')">Cancel</button><button class="btn" id="sv" onclick="savePlayer()">Save Player</button></div>
+</div></div>
+
+<div class="md" id="mProf"><div class="box" id="prof"></div></div>
+<div class="md" id="mUser"><div class="box">
+  <h2>Captain / Admin Account</h2>
+  <div class="fg">
+    <div><label>Username</label><input id="uu" autocapitalize="none"></div>
+    <div><label>Password (blank = keep)</label><input id="up" type="text"></div>
+    <div><label>Display Name</label><input id="un"></div>
+    <div><label>Role</label><select id="ur"><option value="captain">Captain</option><option value="admin">Admin</option></select></div>
+    <div class="w"><label>Ward (captain)</label><select id="uw"></select></div>
+  </div>
+  <div class="acts"><button class="btn s" onclick="closeM('mUser')">Cancel</button><button class="btn" onclick="saveUser()">Save</button></div>
+</div></div>
+<div class="md" id="mSet"><div class="box">
+  <h2>Google Sheet Connection</h2>
+  <label>Apps Script Web App URL</label><input id="url" placeholder="https://script.google.com/macros/s/.../exec">
+  <div class="acts"><button class="btn s" onclick="closeM('mSet')">Close</button><button class="btn" onclick="saveSet()">Save &amp; Load</button></div>
+</div></div>
+<div class="md" id="mMatch"><div class="box">
+  <h2>Match Details</h2>
+  <div class="fg">
+    <div><label>Match No</label><input id="m_no" type="number"></div>
+    <div><label>Stage</label><select id="m_stage"><option>League</option><option>Semi Final</option><option>Final</option></select></div>
+    <div><label>Team A</label><select id="m_a"></select></div>
+    <div><label>Team B</label><select id="m_b"></select></div>
+    <div><label>A Runs</label><input id="m_ra" type="number"></div><div><label>A Wickets / Overs</label><div style="display:flex;gap:4px"><input id="m_wa" type="number" placeholder="Wkts"><input id="m_oa" type="number" step="0.1" placeholder="Overs"></div></div>
+    <div><label>B Runs</label><input id="m_rb" type="number"></div><div><label>B Wickets / Overs</label><div style="display:flex;gap:4px"><input id="m_wb" type="number" placeholder="Wkts"><input id="m_ob" type="number" step="0.1" placeholder="Overs"></div></div>
+    <div><label>Result</label><select id="m_result"><option value="">Auto (higher runs wins)</option><option value="A">Team A won</option><option value="B">Team B won</option><option value="tie">Tie</option><option value="nr">No result</option></select></div>
+    <div><label>Date</label><input id="m_date" type="date"></div>
+    <div class="w"><label>Note (venue, man of the match...)</label><input id="m_note"></div>
+  </div>
+  <div class="acts"><button class="btn s" onclick="closeM('mMatch')">Cancel</button><button class="btn" onclick="saveMatch()">Save Match</button></div>
+</div></div>
+<div id="tt"></div>
+
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ROLES=['Batsman','Bowler','All-rounder','Wicket Keeper'];
+const W9=[1,2,3,4,5,6,7,8,9];
+const FIELDS=[
+ ['ward','Ward Team','select',W9.map(n=>[n,'Ward '+n])],['jersey','Jersey No','number'],
+ ['name','Player Full Name','text','w'],['father','Father Name','text'],['dob','Date of Birth','date'],
+ ['mobile','Mobile No','tel'],['blood','Blood Group','select',['','A+','A-','B+','B-','O+','O-','AB+','AB-']],
+ ['address','Address / Tole','text','w'],['role','Playing Role','select',ROLES],['bat','Batting Style','select',['Right Hand','Left Hand']],
+ ['bowl','Bowling Style','select',['None','Right Arm Fast','Right Arm Medium','Right Arm Spin','Left Arm Fast','Left Arm Medium','Left Arm Spin']],
+ ['cap','Captain / Vice','select',['','Captain','Vice Captain']]
+];
+const BLANK="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Crect fill='%23dfe5f1' width='90' height='90'/%3E%3C/svg%3E";
+let P=[],ST=[],CFG={},U=[],ward='all',photo='',editId=null,view='P';
+let URL_=localStorage.rmc_url||'',S=null;try{S=JSON.parse(localStorage.rmc_s||'null')}catch(e){}
+const isA=()=>S&&S.role==='admin',isC=()=>S&&S.role==='captain';
+function toast(m){const t=$('#tt');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2800)}
+function closeM(id){$('#'+id).classList.remove('on')}
+async function api(action,data={}){
+  if(!URL_){openSet();throw 'Set Google Sheet URL first'}
+  const r=await fetch(URL_,{method:'POST',body:JSON.stringify({action,token:S&&S.token,...data})}).then(r=>r.json());
+  if(!r.ok){if(r.error==='auth'&&S){S=null;localStorage.removeItem('rmc_s');head();toast('Session expired - login again');load()}throw r.error}
+  return r}
+
+$('#fg').innerHTML=FIELDS.map(([k,l,t,x])=>{
+  const cls=(x==='w')?' class="w"':'';
+  const inner=t==='select'?`<select id="f_${k}">${x.map(o=>Array.isArray(o)?`<option value="${o[0]}">${o[1]}</option>`:`<option value="${o}">${o||'-'}</option>`).join('')}</select>`:`<input id="f_${k}" type="${t}">`;
+  return `<div${cls}><label>${l}${k==='name'?' *':''}</label>${inner}</div>`}).join('');
+$('#uw').innerHTML=W9.map(n=>`<option value="${n}">Ward ${n}</option>`).join('');
+
+// ---------- header / nav ----------
+function head(){
+  $('#hr').innerHTML=(S?`<span class="me">${esc(S.name)} · ${S.role==='admin'?'Admin':'Captain W'+esc(S.ward)}</span><button class="btn s sm" onclick="chPass()">🔑</button><button class="btn s sm" onclick="logout()">Logout</button>`:`<button class="btn s" onclick="openLogin()">🔐 Login</button>`)+`<button class="btn s sm" onclick="load()">⟳</button><button class="btn s sm" onclick="openSet()">⚙</button>`;
+  const pend=isA()?P.filter(p=>p.status==='pending').length:0;
+  $('#nav').innerHTML=`<button class="btn ${view==='P'?'on':''}" onclick="go('P')"><span>👥</span>Players${pend?` (${pend}⏳)`:''}</button><button class="btn ${view==='M'?'on':''}" onclick="go('M')"><span>🏏</span>Matches</button><button class="btn ${view==='S'?'on':''}" onclick="go('S')"><span>📊</span>Standings</button>`+(isA()?`<button class="btn ${view==='U'?'on':''}" onclick="go('U')"><span>🔑</span>Accounts</button>`:'');
+  $('#addB').style.display=S?'':'none';$('#csvB').style.display=isA()?'':'none';
+  $('#fs').innerHTML=S?`<option value="">All status</option><option value="pending">⏳ Pending</option><option value="approved">✅ Approved</option><option value="rejected">❌ Rejected</option>`:'';
+  $('#fs').style.display=S?'':'none';
+}
+function go(v){view=v;['P','M','S','U'].forEach(x=>$('#v'+x).style.display=x===v?'':'none');if(v==='U')loadUsers();render();renderM();renderST();head()}
+
+// ---------- auth ----------
+function openLogin(){if(!URL_)return openSet();$('#lu').value='';$('#lp').value='';$('#mLogin').classList.add('on');$('#lu').focus()}
+async function login(){
+  try{const r=await api('login',{user:$('#lu').value,pass:$('#lp').value});
+    S={...r.session,token:r.token};localStorage.rmc_s=JSON.stringify(S);closeM('mLogin');toast('Welcome '+S.name);await load()}
+  catch(e){toast(e)}}
+async function logout(){try{await api('logout')}catch(e){}S=null;localStorage.removeItem('rmc_s');if(view==='U')view='P';await load();go(view)}
+async function chPass(){const p=prompt('New password (min 6 characters):');if(!p)return;try{await api('changePass',{pass:p});toast('Password changed')}catch(e){toast(e)}}
+
+// ---------- load ----------
+async function load(){
+  if(!URL_){head();render();return}
+  try{const r=await api('list');P=r.players.map(p=>({...p,id:String(p.id),dob:p.dob?String(p.dob).slice(0,10):''}));M=(r.matches||[]).map(m=>({...m,no:+m.no,a:+m.a,b:+m.b,date:m.date?String(m.date).slice(0,10):''})).sort((x,y)=>x.no-y.no);CFG=r.cfg||{}}
+  catch(e){toast('Load failed: '+e)}
+  head();render();renderM();renderST()}
+
+// ---------- players ----------
+function render(){
+  const q=$('#q').value.toLowerCase().trim(),fs=$('#fs').value;
+  const ok=P.filter(p=>p.status==='approved');
+  $('#stats').innerHTML=`<div class="stat"><b>${ok.length}</b><span>Approved Players</span></div>`+(isA()?`<div class="stat"><b>${P.filter(p=>p.status==='pending').length}</b><span>Pending</span></div>`:'')+ROLES.map(r=>`<div class="stat"><b>${ok.filter(p=>p.role===r).length}</b><span>${r}</span></div>`).join('');
+  $('#tabs').innerHTML=`<div class="tab ${ward==='all'?'on':''}" onclick="ward='all';render()">All<i>${P.length}</i></div>`+W9.map(n=>`<div class="tab ${ward==n?'on':''}" onclick="ward=${n};render()">Ward ${n}<i>${P.filter(p=>p.ward==n).length}</i></div>`).join('');
+  let L=P.filter(p=>(ward==='all'||p.ward==ward)&&(!fs||p.status===fs)&&(!q||[p.name,p.father,p.mobile,p.jersey,p.address].join(' ').toLowerCase().includes(q)));
+  L.sort((a,b)=>a.ward-b.ward||(+a.jersey||999)-(+b.jersey||999));
+  $('#grid').innerHTML=L.length?L.map(p=>`<div class="pc" onclick="showP('${p.id}')"><span class="bd">W${esc(p.ward)}</span>${p.jersey?`<span class="jn">#${esc(p.jersey)}</span>`:''}${p.cap?`<span class="cp">${p.cap==='Captain'?'C':'VC'}</span>`:''}${p.status&&p.status!=='approved'?`<span class="stt ${p.status}">${p.status==='pending'?'⏳ Pending':'Rejected'}</span>`:''}
+   ${p.photo?`<img loading="lazy" src="${esc(p.photo)}" alt="">`:'<div class="ph">👤</div>'}<div class="in"><b>${esc(p.name)}</b><small>${esc(p.role||'')}</small></div></div>`).join(''):`<div class="empty">${URL_?'No players to show.':'Tap ⚙ and paste the Google Sheet URL.'}</div>`;
+}
+function canEdit(p){return isA()||(isC()&&String(p.ward)===String(S.ward))}
+function openForm(id){
+  editId=id||null;photo='';
+  const p=id?P.find(x=>x.id==id):{ward:isC()?S.ward:(ward==='all'?1:ward)};
+  $('#fTitle').textContent=id?'Edit Player':'Add Player';
+  FIELDS.forEach(([k])=>$('#f_'+k).value=p[k]==null?'':p[k]);
+  $('#f_ward').disabled=isC();$('#fNote').style.display=isC()?'':'none';
+  $('#pv').src=p.photo||BLANK;$('#pf').value='';
+  closeM('mProf');$('#mForm').classList.add('on')}
+function pick(inp){
+  const f=inp.files[0];if(!f)return;const r=new FileReader();
+  r.onload=e=>{const im=new Image();im.onload=()=>{const s=Math.min(1,420/Math.max(im.width,im.height)),c=document.createElement('canvas');
+    c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);photo=c.toDataURL('image/jpeg',.72);$('#pv').src=photo};im.src=e.target.result};r.readAsDataURL(f)}
+async function savePlayer(){
+  const p=editId?{...P.find(x=>x.id==editId)}:{};
+  FIELDS.forEach(([k])=>p[k]=$('#f_'+k).value.trim());
+  if(!p.name)return toast('Player name required');
+  if(photo)p.photo=photo;
+  const b=$('#sv');b.disabled=true;b.textContent='Saving…';
+  try{const r=await api('savePlayer',{player:p});closeM('mForm');toast(r.status==='pending'?'Saved - waiting for admin approval':'Saved');await load()}
+  catch(e){toast('Save failed: '+e)}
+  b.disabled=false;b.textContent='Save Player'}
+function showP(id){
+  const p=P.find(x=>x.id==id);if(!p)return;
+  const age=p.dob?Math.floor((Date.now()-new Date(p.dob))/31557600000):'';
+  const rows=[['Ward Team','Ward '+p.ward],['Jersey No',p.jersey],['Father Name',p.father],['Date of Birth',p.dob?p.dob+(age?` (${age} yrs)`:''):''],['Mobile',p.mobile],['Blood Group',p.blood],['Address',p.address],['Role',p.role],['Batting',p.bat],['Bowling',p.bowl],['Captaincy',p.cap],['Status',S?p.status:'']];
+  $('#prof').innerHTML=`<div class="prof">${p.photo?`<img src="${esc(p.photo)}">`:'<div class="ph" style="width:150px;height:150px;border-radius:14px;margin:auto">👤</div>'}<h2>${esc(p.name)}</h2><p>Rajdevi Mayor Cup 2083 · Ward ${esc(p.ward)} Team</p></div>
+  <table class="kv">${rows.filter(r=>r[1]).map(r=>`<tr><td>${r[0]}</td><td>${esc(r[1])}</td></tr>`).join('')}</table>
+  <div class="acts"><button class="btn s" onclick="closeM('mProf')">Close</button>${canEdit(p)?`<button class="btn" onclick="openForm('${p.id}')">Edit</button>`:''}
+  ${isA()&&p.status!=='approved'?`<button class="btn g" onclick="setSt('${p.id}','approved')">✔ Approve</button>`:''}${isA()&&p.status!=='rejected'?`<button class="btn o" onclick="setSt('${p.id}','rejected')">✖ Reject</button>`:''}
+  <button class="btn s" onclick="window.print()">Print</button>${isA()?`<button class="btn r" onclick="del('${p.id}')">Delete</button>`:''}</div>`;
+  $('#mProf').classList.add('on')}
+async function setSt(id,st){try{await api('setStatus',{id,status:st});closeM('mProf');toast(st==='approved'?'Approved ✓':'Rejected');await load()}catch(e){toast(e)}}
+async function del(id){if(!confirm('Delete this player permanently?'))return;try{await api('deletePlayer',{id});closeM('mProf');await load()}catch(e){toast(e)}}
+function csv(){
+  const k=['ward','jersey','name','father','dob','mobile','blood','address','role','bat','bowl','cap','status'];
+  const rows=[k].concat(P.slice().sort((a,b)=>a.ward-b.ward).map(p=>k.map(x=>'"'+String(p[x]==null?'':p[x]).replace(/"/g,'""')+'"')));
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'}));a.download='rajdevi-mayor-cup-2083-players.csv';a.click()}
+
+// ---------- matches & standings ----------
+let M=[];
+const ov=x=>{x=+x||0;return Math.floor(x)+Math.round((x%1)*10)/6};
+const ovN=(w,o)=>(+w>=10&&+CFG.maxovers)?+CFG.maxovers:ov(o);
+const nm=w=>'Ward '+w, rr=(r,o)=>ov(o)?(r/ov(o)).toFixed(2):'-';
+function res(m){if(['A','B','tie','nr'].includes(m.result))return m.result;
+  if(!(+m.oa&&+m.ob))return '';const a=+m.ra,b=+m.rb;return a>b?'A':b>a?'B':'tie'}
+const wn=m=>{const r=res(m);return r==='A'?m.a:r==='B'?m.b:0};
+function table(){
+  const t={};W9.forEach(w=>t[w]={ward:w,p:0,w:0,l:0,t:0,rf:0,of:0,ra:0,oa:0});
+  M.filter(m=>m.stage==='League').forEach(m=>{const r=res(m),A=t[m.a],B=t[m.b];if(!r||!A||!B)return;
+    A.p++;B.p++;if(r==='A'){A.w++;B.l++}else if(r==='B'){B.w++;A.l++}else{A.t++;B.t++}
+    if(r!=='nr'){const oa=ovN(m.wa,m.oa),ob=ovN(m.wb,m.ob);
+      A.rf+=+m.ra;A.of+=oa;A.ra+=+m.rb;A.oa+=ob;B.rf+=+m.rb;B.of+=ob;B.ra+=+m.ra;B.oa+=oa}});
+  return Object.values(t).map(r=>({...r,pts:r.w*2+r.t,nrr:(r.of&&r.oa)?r.rf/r.of-r.ra/r.oa:0})).sort((x,y)=>y.pts-x.pts||y.nrr-x.nrr||x.ward-y.ward)}
+const SGC={'League':'#dbe4ff','Semi Final':'#ffd8a8','Final':'#ffe066'};
+const mob=()=>matchMedia('(max-width:700px)').matches;
+function renderM(){
+  const top=isA()?`<div class="acts" style="margin:0 0 10px"><button class="btn o" onclick="openMatch()">+ Add Match</button><button class="btn g" onclick="nextStage()">⚡ Auto Semi / Final</button></div>`:'';
+  const info=m=>{const r=res(m),w=wn(m);
+    return{r,rt:r==='A'||r==='B'?`🏆 <b>${nm(w)}</b> won`:r==='tie'?'Tie':r==='nr'?'No result':'<span style="color:var(--mut)">Upcoming</span>'}};
+  if(mob()){
+    const line=(t,x,y,z,win)=>`<div class="ml${win?' w':''}"><span>${nm(t)}${win?' 🏆':''}</span><span>${+z?`<b>${+x}/${+y||0}</b> <small>(${z} ov · RR ${rr(+x,z)})</small>`:'-'}</span></div>`;
+    $('#vM').innerHTML=top+(M.length?M.map(m=>{const {r,rt}=info(m);
+      return `<div class="mc"><div class="mh"><b>Match ${m.no}</b><span class="sg" style="background:${SGC[m.stage]||'#eee'}">${esc(m.stage)}</span><small>${esc(m.date)}</small></div>${line(m.a,m.ra,m.wa,m.oa,r==='A')}${line(m.b,m.rb,m.wb,m.ob,r==='B')}<div class="mr">${rt}</div>${m.note?`<small style="color:var(--mut)">${esc(m.note)}</small>`:''}${isA()?`<div class="acts" style="margin-top:8px"><button class="btn s sm" onclick="openMatch(${m.no})">Edit</button><button class="btn r sm" onclick="delMatch(${m.no})">Delete</button></div>`:''}</div>`}).join(''):'<div class="empty">No matches yet.</div>');
+    return}
+  const rows=M.map(m=>{const {rt}=info(m);
+    const sc=(x,y,z)=>(+z)?`${+x}/${+y||0} <small>(${z} ov)</small>`:'-';
+    return `<tr><td><b>${m.no}</b></td><td><span class="sg" style="background:${SGC[m.stage]||'#eee'}">${esc(m.stage)}</span></td><td>${esc(m.date)}</td>
+    <td style="text-align:left">${nm(m.a)} vs ${nm(m.b)}</td><td>${sc(m.ra,m.wa,m.oa)}<br><small>RR ${rr(+m.ra,m.oa)}</small></td><td>${sc(m.rb,m.wb,m.ob)}<br><small>RR ${rr(+m.rb,m.ob)}</small></td><td>${rt}</td>
+    ${isA()?`<td><button class="btn s sm" onclick="openMatch(${m.no})">Edit</button> <button class="btn r sm" onclick="delMatch(${m.no})">✕</button></td>`:''}</tr>`}).join('');
+  $('#vM').innerHTML=top+`<div class="tw"><table><tr><th>No</th><th>Stage</th><th>Date</th><th>Match</th><th>Team A</th><th>Team B</th><th>Result</th>${isA()?'<th></th>':''}</tr>${rows||`<tr><td colspan="8" style="padding:20px;color:var(--mut)">No matches yet.</td></tr>`}</table></div>`}
+function openMatch(no){
+  const m=M.find(x=>x.no===no)||{no:Math.max(0,...M.map(x=>x.no))+1,stage:'League',a:1,b:2,result:''};
+  const opt=W9.map(n=>`<option value="${n}">Ward ${n}</option>`).join('');$('#m_a').innerHTML=opt;$('#m_b').innerHTML=opt;
+  ['no','stage','a','b','ra','wa','oa','rb','wb','ob','result','date','note'].forEach(k=>$('#m_'+k).value=m[k]==null?'':m[k]);
+  $('#m_no').disabled=!!M.find(x=>x.no===no);$('#mMatch').classList.add('on')}
+async function saveMatch(){
+  const m={};['no','stage','a','b','ra','wa','oa','rb','wb','ob','result','date','note'].forEach(k=>m[k]=$('#m_'+k).value.trim());
+  try{await api('saveMatch',{match:m});closeM('mMatch');toast('Match saved');await load()}catch(e){toast(e)}}
+async function delMatch(no){if(!confirm('Delete match '+no+'?'))return;try{await api('deleteMatch',{no});await load()}catch(e){toast(e)}}
+async function nextStage(){
+  const lg=M.filter(m=>m.stage==='League'),sf=M.filter(m=>m.stage==='Semi Final'),fin=M.filter(m=>m.stage==='Final');
+  if(!lg.length)return toast('Add league matches first');
+  const tb=table();let n=Math.max(0,...M.map(m=>m.no))+1,list=[];
+  if(!sf.length){
+    if(lg.some(m=>!res(m))&&!confirm('Some league matches have no result yet. Create semi finals from the current table?'))return;
+    list=[{no:n,stage:'Semi Final',a:tb[0].ward,b:tb[3].ward,note:'SF1: 1st vs 4th'},{no:n+1,stage:'Semi Final',a:tb[1].ward,b:tb[2].ward,note:'SF2: 2nd vs 3rd'}]}
+  else if(!fin.length){
+    if(sf.length<2||sf.some(m=>!wn(m)))return toast('Complete both semi-final results first');
+    list=[{no:n,stage:'Final',a:wn(sf[0]),b:wn(sf[1]),note:'Final'}]}
+  else return toast('Final already created');
+  try{for(const m of list)await api('saveMatch',{match:m});toast('Created');await load()}catch(e){toast(e)}}
+
+const CF=[['champion','🏆 Winner (Champion)'],['runnerup','🥈 Runner-up'],['mom','⭐ Man of the Tournament'],['bestbat','🏏 Best Batsman'],['bestbowl','🎯 Best Bowler']];
+function renderST(){
+  const tb=table(),F=M.find(m=>m.stage==='Final'),fw=F?wn(F):0,fl=fw?(F.a===fw?F.b:F.a):0;
+  const auto={champion:fw?nm(fw):'',runnerup:fl?nm(fl):''};
+  const shown=CF.filter(([k])=>CFG[k]||auto[k]||isA());
+  const played=M.some(m=>m.stage==='League'&&res(m));
+  $('#vS').innerHTML=(shown.length?`<div class="win">${shown.map(([k,l])=>`<div><small>${l}</small>${isA()?`<input data-c="${k}" value="${esc(CFG[k]||'')}" placeholder="${auto[k]?'Auto: '+auto[k]:''}" style="margin-top:4px">`:`<b>${esc(CFG[k]||auto[k])}</b>`}</div>`).join('')}</div>`:'')+
+  `<button class="btn s sm mo" onclick="document.querySelector('#vS .tw').classList.toggle('full')">↔ Full table</button><div class="tw"><table><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>L</th><th class="hm">T/NR</th><th class="hm">Runs For</th><th class="hm">Overs</th><th class="hm">Runs Ag.</th><th class="hm">Overs</th><th>Pts</th><th>NRR</th></tr>`+
+  tb.map((r,i)=>`<tr style="${played&&i<4?'background:#e8f7ee':''}"><td>${i+1}</td><td>Ward ${r.ward}</td><td>${r.p}</td><td>${r.w}</td><td>${r.l}</td><td class="hm">${r.t}</td><td class="hm">${r.rf}</td><td class="hm">${r.of.toFixed(1)}</td><td class="hm">${r.ra}</td><td class="hm">${r.oa.toFixed(1)}</td><td><b>${r.pts}</b></td><td>${r.nrr>0?'+':''}${r.nrr.toFixed(3)}</td></tr>`).join('')+`</table></div>`+
+  `<p style="font-size:12px;color:var(--mut);margin-top:8px">Auto-calculated from League matches. Green = top 4 (semi-final zone). Win = 2 pts, Tie/No-result = 1 pt. NRR = (Runs For ÷ Overs faced) − (Runs Against ÷ Overs bowled). If a team is all out (10 wkts) the full quota overs below are counted.</p>`+
+  (isA()?`<div style="margin-top:10px;max-width:260px"><label>Max overs per innings (for all-out NRR rule)</label><input data-c="maxovers" type="number" value="${esc(CFG.maxovers||'')}" placeholder="e.g. 10"></div><div class="acts"><button class="btn g" onclick="saveCfg()">💾 Save Winners &amp; Settings</button></div>`:'')}
+async function saveCfg(){
+  const cfg={};document.querySelectorAll('#vS [data-c]').forEach(i=>cfg[i.dataset.c]=i.value.trim());
+  try{await api('saveCfg',{cfg});toast('Saved ✓');await load()}catch(e){toast(e)}}
+
+// ---------- accounts (admin) ----------
+async function loadUsers(){try{U=(await api('listUsers')).users}catch(e){toast(e)}renderU()}
+function renderU(){
+  const top=`<div class="acts" style="margin:0 0 10px"><button class="btn o" onclick="openUser()">+ New Account</button></div>`;
+  const foot=`<p style="font-size:12px;color:var(--mut);margin-top:8px">Change the default passwords after first login. Each captain can add/edit only their own ward's players.</p>`;
+  const tag=u=>u.role==='admin'?'Admin':'Captain W'+esc(u.ward);
+  $('#vU').innerHTML=top+(mob()?U.map(u=>`<div class="mc"><div class="mh"><b>${esc(u.username)}</b><span class="sg" style="background:#dbe4ff">${tag(u)}</span></div><div class="mr">${esc(u.name)}</div><div class="acts" style="margin-top:8px"><button class="btn s sm" onclick="openUser('${esc(u.username)}')">Edit</button>${u.username!=='admin'?`<button class="btn r sm" onclick="delUser('${esc(u.username)}')">Delete</button>`:''}</div></div>`).join(''):
+  `<div class="tw"><table class="kv"><tr><th>Username</th><th>Name</th><th>Role</th><th></th></tr>`+U.map(u=>`<tr><td style="text-align:left"><b>${esc(u.username)}</b></td><td>${esc(u.name)}</td><td>${tag(u)}</td><td><button class="btn s sm" onclick="openUser('${esc(u.username)}')">Edit</button> ${u.username!=='admin'?`<button class="btn r sm" onclick="delUser('${esc(u.username)}')">✕</button>`:''}</td></tr>`).join('')+`</table></div>`)+foot}
+matchMedia('(max-width:700px)').addEventListener('change',()=>{renderM();if(view==='U')renderU()});
+function openUser(n){const u=U.find(x=>x.username===n)||{role:'captain',ward:1};
+  $('#uu').value=u.username||'';$('#uu').disabled=!!n;$('#up').value='';$('#un').value=u.name||'';$('#ur').value=u.role;$('#uw').value=u.ward||1;$('#mUser').classList.add('on')}
+async function saveUser(){try{await api('saveUser',{user:{username:$('#uu').value,pass:$('#up').value,name:$('#un').value,role:$('#ur').value,ward:$('#uw').value}});closeM('mUser');toast('Saved');loadUsers()}catch(e){toast(e)}}
+async function delUser(n){if(!confirm('Delete account '+n+'?'))return;try{await api('deleteUser',{username:n});loadUsers()}catch(e){toast(e)}}
+
+function openSet(){$('#url').value=URL_;$('#mSet').classList.add('on')}
+function saveSet(){URL_=$('#url').value.trim();localStorage.rmc_url=URL_;closeM('mSet');load()}
+head();render();renderM();renderST();load();
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "name": "Rajdevi Mayor Cup",
+  "description": "Cricket Tournament Dashboard for Rajdevi Mayor Cup 2083 featuring 9 Ward Teams, player profiles, live match scoring, auto-calculated standings, and team management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
