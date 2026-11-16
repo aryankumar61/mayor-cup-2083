@@ -35,6 +35,7 @@ data class UiState(
     val isAddEditMatchOpen: Boolean = false,
     val matchBeingEdited: TournamentMatch? = null,
     val isEditingExistingMatch: Boolean = false,
+    val isSavingMatch: Boolean = false,
     val isAccountModalOpen: Boolean = false,
     val accountBeingEdited: TournamentAccount? = null,
     val isChangePasswordOpen: Boolean = false,
@@ -112,9 +113,10 @@ class TournamentViewModel(application: Application) : AndroidViewModel(applicati
         players,
         _uiState.map { it.currentUser }.distinctUntilChanged()
     ) { allPlayers, user ->
-        when {
-            user?.role == "admin" -> allPlayers
-            user?.role == "captain" -> allPlayers.filter {
+        val role = user?.role?.trim()?.lowercase()
+        when (role) {
+            "admin" -> allPlayers
+            "captain" -> allPlayers.filter {
                 it.status.equals("approved", ignoreCase = true) || it.ward == user.ward
             }
             else -> allPlayers.filter { it.status.equals("approved", ignoreCase = true) }
@@ -183,7 +185,7 @@ class TournamentViewModel(application: Application) : AndroidViewModel(applicati
 
     fun selectTab(tab: TournamentTab) {
         _uiState.update { it.copy(currentTab = tab) }
-        if (tab == TournamentTab.ACCOUNTS && _uiState.value.currentUser?.role == "admin") {
+        if (tab == TournamentTab.ACCOUNTS && _uiState.value.currentUser?.role?.trim()?.equals("admin", ignoreCase = true) == true) {
             loadUsers()
         }
     }
@@ -461,8 +463,22 @@ class TournamentViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun saveMatch(match: TournamentMatch) {
+        if (match.no <= 0) {
+            showSnackbar("Match number must be 1 or greater")
+            return
+        }
+        if (match.teamA == match.teamB) {
+            showSnackbar("Team A and Team B must be different wards")
+            return
+        }
+        if (match.wicketsA !in 0..10 || match.wicketsB !in 0..10) {
+            showSnackbar("Wickets must be between 0 and 10")
+            return
+        }
         viewModelScope.launch {
+            _uiState.update { it.copy(isSavingMatch = true) }
             val outcome = repository.saveMatchRemoteAndLocal(_uiState.value.authToken, match)
+            _uiState.update { it.copy(isSavingMatch = false) }
             handleOutcome(outcome) {
                 closeAddEditMatch()
                 showSnackbar("Match saved")

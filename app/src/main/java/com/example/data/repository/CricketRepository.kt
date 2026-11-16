@@ -124,6 +124,12 @@ class CricketRepository(
         }
     }
 
+    private fun JSONObject.optCleanString(key: String, default: String = ""): String {
+        if (!has(key) || isNull(key)) return default
+        val raw = opt(key)?.toString()?.trim() ?: return default
+        return if (raw.equals("null", ignoreCase = true) || raw.isEmpty()) default else raw
+    }
+
     private suspend fun postApi(
         action: String,
         token: String? = null,
@@ -589,26 +595,26 @@ class CricketRepository(
                             val obj = arr.getJSONObject(i)
                             downloaded.add(
                                 Player(
-                                    id = obj.optString("id", "p_$i"),
+                                    id = obj.optCleanString("id", "p_$i"),
                                     ward = obj.optIntSafe("ward", 1),
-                                    jersey = obj.optString("jersey", ""),
-                                    name = obj.optString("name", "Player"),
-                                    father = obj.optString("father", ""),
-                                    dob = obj.optString("dob", "").take(10),
-                                    mobile = obj.optString("mobile", ""),
-                                    blood = obj.optString("blood", ""),
-                                    address = obj.optString("address", ""),
-                                    role = obj.optString("role", "Batsman"),
-                                    bat = obj.optString("bat", "Right Hand"),
-                                    bowl = obj.optString("bowl", "None"),
-                                    cap = obj.optString("cap", ""),
-                                    photo = obj.optString("photo", ""),
-                                    status = obj.optString("status", "approved"),
-                                    citizen = obj.optString("citizen", ""),
-                                    citizenimg = obj.optString("citizenimg", ""),
-                                    citizenmime = obj.optString("citizenmime", ""),
-                                    by = obj.optString("by", ""),
-                                    updated = obj.optString("updated", "")
+                                    jersey = obj.optCleanString("jersey", ""),
+                                    name = obj.optCleanString("name", "Player"),
+                                    father = obj.optCleanString("father", ""),
+                                    dob = obj.optCleanString("dob", "").take(10),
+                                    mobile = obj.optCleanString("mobile", ""),
+                                    blood = obj.optCleanString("blood", ""),
+                                    address = obj.optCleanString("address", ""),
+                                    role = obj.optCleanString("role", "Batsman"),
+                                    bat = obj.optCleanString("bat", "Right Hand"),
+                                    bowl = obj.optCleanString("bowl", "None"),
+                                    cap = obj.optCleanString("cap", ""),
+                                    photo = obj.optCleanString("photo", ""),
+                                    status = obj.optCleanString("status", "approved").lowercase(),
+                                    citizen = obj.optCleanString("citizen", ""),
+                                    citizenimg = obj.optCleanString("citizenimg", ""),
+                                    citizenmime = obj.optCleanString("citizenmime", ""),
+                                    by = obj.optCleanString("by", ""),
+                                    updated = obj.optCleanString("updated", "")
                                 )
                             )
                         }
@@ -623,7 +629,7 @@ class CricketRepository(
                             downloadedMatches.add(
                                 TournamentMatch(
                                     no = mObj.optIntSafe("no", i + 1),
-                                    stage = mObj.optString("stage", "League"),
+                                    stage = mObj.optCleanString("stage", "League"),
                                     teamA = mObj.optIntSafe("a", 1),
                                     teamB = mObj.optIntSafe("b", 2),
                                     runsA = mObj.optIntSafe("ra", 0),
@@ -632,9 +638,9 @@ class CricketRepository(
                                     runsB = mObj.optIntSafe("rb", 0),
                                     wicketsB = mObj.optIntSafe("wb", 0),
                                     oversB = mObj.optDoubleSafe("ob", 0.0),
-                                    result = mObj.optString("result", ""),
-                                    date = mObj.optString("date", "").take(10),
-                                    note = mObj.optString("note", "")
+                                    result = mObj.optCleanString("result", ""),
+                                    date = mObj.optCleanString("date", "").take(10),
+                                    note = mObj.optCleanString("note", "")
                                 )
                             )
                         }
@@ -648,7 +654,7 @@ class CricketRepository(
                             val keys = cfgObj.keys()
                             while (keys.hasNext()) {
                                 val k = keys.next()
-                                cfgList.add(TournamentConfig(k, cfgObj.optString(k, "")))
+                                cfgList.add(TournamentConfig(k, cfgObj.optCleanString(k, "")))
                             }
                         }
                     }

@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 
 @Database(
     entities = [Player::class, TournamentMatch::class, TournamentAccount::class, TournamentConfig::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -59,7 +59,6 @@ abstract class AppDatabase : RoomDatabase() {
 suspend fun populateInitialData(database: AppDatabase) {
     val accountDao = database.accountDao()
     val playerDao = database.playerDao()
-    val matchDao = database.matchDao()
     val configDao = database.configDao()
 
     // 1. Default accounts matching Code_1.gs (admin@2083, ward1..ward9)
@@ -73,7 +72,7 @@ suspend fun populateInitialData(database: AppDatabase) {
     }
     accountDao.insertAll(accounts)
 
-    // 2. Initial players across the 9 wards (shown until server sync completes)
+    // 2. Initial players across the 9 wards (replaced on server sync)
     val initialPlayers = listOf(
         Player("p101", 1, "7", "Amit Shah", "Birendra Shah", "1999-05-12", "9801234567", "O+", "Rajdevi-1, Pipra", "All-rounder", "Right Hand", "Right Arm Fast", "Captain", "", "approved"),
         Player("p102", 1, "18", "Suraj Sah", "Ram Chandra Sah", "2001-08-20", "9812345678", "B+", "Rajdevi-1, Chowk", "Batsman", "Right Hand", "None", "Vice Captain", "", "approved"),
@@ -90,13 +89,7 @@ suspend fun populateInitialData(database: AppDatabase) {
     )
     playerDao.insertAll(initialPlayers)
 
-    // 3. Initial matches
-    val initialMatches = listOf(
-        TournamentMatch(1, "League", 1, 2, 88, 4, 10.0, 72, 7, 10.0, "A", "2083-01-10", "Inaugural Match · Ground A"),
-        TournamentMatch(2, "League", 3, 4, 104, 3, 10.0, 89, 8, 10.0, "A", "2083-01-11", "High scoring thriller"),
-        TournamentMatch(3, "League", 5, 6, 75, 10, 8.4, 76, 3, 7.2, "B", "2083-01-12", "Ward 6 chased comfortably")
-    )
-    matchDao.insertAll(initialMatches)
+    // 3. Matches start empty (no demo match data) and sync from Google Sheets or Admin input
 
     // 4. Default configuration
     val configs = listOf(

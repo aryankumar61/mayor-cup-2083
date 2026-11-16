@@ -84,7 +84,7 @@ fun TournamentApp(viewModel: TournamentViewModel) {
         allPlayers.count { it.status == "pending" }
     }
 
-    val isAdmin = uiState.currentUser?.role == "admin"
+    val isAdmin = uiState.currentUser?.role?.trim()?.equals("admin", ignoreCase = true) == true
 
     Scaffold(
         topBar = {
@@ -331,6 +331,7 @@ fun TournamentApp(viewModel: TournamentViewModel) {
         isOpen = uiState.isAddEditMatchOpen,
         match = uiState.matchBeingEdited,
         isEditingExisting = uiState.isEditingExistingMatch,
+        isSaving = uiState.isSavingMatch,
         onDismiss = { viewModel.closeAddEditMatch() },
         onSave = { updated -> viewModel.saveMatch(updated) }
     )

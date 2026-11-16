@@ -27,6 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.example.data.model.Player
 import com.example.data.model.TournamentAccount
 import com.example.ui.theme.CricketGold
@@ -37,6 +38,7 @@ import com.example.ui.theme.OutfitFontFamily
 import java.time.LocalDate
 import java.time.Period
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PlayerProfileDialog(
     player: Player?,
@@ -50,8 +52,8 @@ fun PlayerProfileDialog(
 ) {
     if (player == null) return
     val context = LocalContext.current
-    val isAdmin = currentUser?.role == "admin"
-    val isOwnCaptain = currentUser?.role == "captain" && currentUser.ward == player.ward
+    val isAdmin = currentUser?.role?.trim()?.equals("admin", ignoreCase = true) == true
+    val isOwnCaptain = currentUser?.role?.trim()?.equals("captain", ignoreCase = true) == true && currentUser.ward == player.ward
     val canEdit = isAdmin || isOwnCaptain
 
     var showDeleteConfirm by remember(player.id) { mutableStateOf(false) }
@@ -90,14 +92,18 @@ fun PlayerProfileDialog(
         )
     }
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Card(
             shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .padding(vertical = 12.dp)
+                .fillMaxWidth(0.94f)
+                .widthIn(max = 520.dp)
+                .heightIn(max = 760.dp)
+                .padding(vertical = 8.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -138,10 +144,10 @@ fun PlayerProfileDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                Row(
+                FlowRow(
                     modifier = Modifier.padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     SuggestionChip(
                         onClick = {},
